@@ -1,0 +1,29 @@
+flowchart TD
+  title["layers.1: Llama4TextDecoderLayer[MoE]"]
+  title -.-> n0
+  n0["input\nactivation"]
+  n1["input_layernorm\nRMSNorm"]
+  n2["q_proj/k_proj/v_proj\nprojection\nattention_heads=40\nhead_dim=128\nkv_heads=8"]
+  n3["rotary_position_embedding\nRoPE\nenabled=True\nlayer_uses_rope=True\nno_rope_layer_interval=4\ntheta=500000.0"]
+  n4["attention\nattention_kernel\nattention_chunk_size=8192\nattention_dropout=0.0"]
+  n5["o_proj\nprojection"]
+  n6["residual_add_0\nresidual"]
+  n7["post_attention_layernorm\nRMSNorm"]
+  n8["router\nMoE router\nactivated_experts=1\nexperts=128\nrouter_aux_loss_coef=0.001"]
+  n9["expert_gate/up/down_proj\nrouted expert MLP\nactivated_experts=1\nactivation=silu\nexperts=128\nintermediate_size=8192\ntype=MoE"]
+  n10["shared_expert_gate/up/down_proj\nshared expert MLP\nactivation=silu\nintermediate_size=8192\ntype=shared_dense"]
+  n11["combine_experts\nMoE combine"]
+  n12["residual_add_1\nresidual"]
+  n0 --> n1
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6
+  n6 --> n7
+  n7 --> n8
+  n8 --> n9
+  n11 --> n12
+  n7 --> n10
+  n9 --> n11
+  n10 --> n11

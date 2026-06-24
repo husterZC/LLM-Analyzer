@@ -1,0 +1,9 @@
+flowchart TD
+  title["layers.0 dense MLP detail"]
+  x["Post-attention hidden states\nhidden=6144"] --> gate["gate_proj\nhidden -> 12288"]
+  x --> up["up_proj\nhidden -> 12288"]
+  gate --> act["silu(gate)"]
+  act --> mul["elementwise multiply"]
+  up --> mul
+  mul --> down["down_proj\n12288 -> hidden"]
+  down --> residual["residual add"]

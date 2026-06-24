@@ -1,0 +1,6 @@
+flowchart TD
+  tokens["Token IDs"] --> embed["Token embedding\nvocab=201088\nhidden=2880"]
+  embed --> layers
+  layers["36 x GptOssDecoderLayer\n36 MoE layers / 0 dense MLP layers\nMoE: 128 experts, top-4\nheads=64 kv_heads=8\nGQA + RoPE + sliding window"] --> final_norm["Final norm"]
+  final_norm --> lm_head["LM head"]
+  lm_head --> logits["Logits"]

@@ -1,0 +1,7 @@
+flowchart TD
+  tokens["Token IDs"] --> embed["Token embedding\nvocab=154880\nhidden=6144"]
+  embed --> layers
+  layers["78 x GlmMoeDsaDecoderLayer\n75 MoE layers / 3 dense MLP layers\nMoE: 256 experts, top-8\nheads=64 kv_heads=64\nGLM DSA/MLA"] --> final_norm["Final norm"]
+  final_norm --> lm_head["LM head"]
+  lm_head --> logits["Logits"]
+  layers -.-> mtp["MTP\n1 next-token layer(s)"]

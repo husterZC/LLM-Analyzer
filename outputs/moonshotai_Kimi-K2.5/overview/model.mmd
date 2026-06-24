@@ -1,0 +1,10 @@
+flowchart TD
+  image["Image input"] --> vision["Vision encoder\n27 layers\nhidden=1152\npatch=14\nprojector=patchmerger"]
+  vision --> fusion["Multimodal projection / early fusion\nmerge=sd2_tpool"]
+  tokens["Text token IDs"] --> embed["Token embedding\nvocab=163840\nhidden=7168"]
+  fusion --> decoder_input
+  embed --> decoder_input
+  decoder_input["Decoder input sequence"] --> layers
+  layers["61 x KimiK25DeepseekDecoderLayer\n60 MoE layers / 1 dense MLP layers\nMoE: 384 experts, top-8\nheads=64 kv_heads=64\nKimi/DeepSeek-V3 MLA"] --> final_norm["Final norm"]
+  final_norm --> lm_head["LM head"]
+  lm_head --> logits["Logits"]

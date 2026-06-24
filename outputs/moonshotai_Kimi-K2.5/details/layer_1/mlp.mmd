@@ -1,0 +1,18 @@
+flowchart TD
+  title["layers.1 MLP primitive detail"]
+  x["Post-attention hidden states\nhidden=7168"] --> split["Used by routed experts and shared expert"]
+  split --> routed_gate["Routed expert gate/up projection\nexperts=384\nintermediate=2048"]
+  routed_gate --> routed_act["silu(gate)"]
+  routed_gate --> routed_up["up branch"]
+  routed_act --> routed_mul["elementwise multiply"]
+  routed_up --> routed_mul
+  routed_mul --> routed_down["routed expert down projection\nintermediate -> hidden"]
+  split --> shared_gate["Shared expert gate/up projection\nintermediate=2048"]
+  shared_gate --> shared_act["silu(gate)"]
+  shared_gate --> shared_up["up branch"]
+  shared_act --> shared_mul["elementwise multiply"]
+  shared_up --> shared_mul
+  shared_mul --> shared_down["shared expert down projection\nintermediate -> hidden"]
+  routed_down --> combine["combine with router weights"]
+  shared_down --> combine
+  combine --> output["MLP output"]

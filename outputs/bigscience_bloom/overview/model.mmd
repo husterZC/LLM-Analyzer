@@ -1,0 +1,6 @@
+flowchart TD
+  tokens["Token IDs"] --> embed["Token embedding\nvocab=250880\nhidden=14336"]
+  embed --> layers
+  layers["70 x BloomBlock\nheads=112 kv_heads=112\nMHA + ALiBi"] --> final_norm["Final norm"]
+  final_norm --> lm_head["LM head"]
+  lm_head --> logits["Logits"]

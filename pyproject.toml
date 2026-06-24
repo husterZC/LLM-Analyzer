@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-analyzer"
+version = "0.1.0"
+description = "Metadata-only tools for inspecting open-source LLM architectures."
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = []
+
+[project.optional-dependencies]
+onnx = ["onnx>=1.16"]
+
+[project.scripts]
+llm-analyzer = "llm_analyzer.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["llm_analyzer*"]

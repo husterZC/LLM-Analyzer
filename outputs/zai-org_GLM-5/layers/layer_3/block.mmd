@@ -1,0 +1,23 @@
+flowchart TD
+  title["layers.3: GlmMoeDsaDecoderLayer[MoE]"]
+  title -.-> n0
+  n0["input\nactivation"]
+  n1["input_layernorm\nRMSNorm"]
+  n2["glm_dsa_attention\nGLM DSA/MLA sparse attention\nattention_heads=64\nhead_dim=64\nindex_head_dim=128\nindex_n_heads=32\nindex_topk=2048\nindexer_rope_interleave=True\nkv_heads=64\nkv_lora_rank=512\nq_lora_rank=2048\nqk_head_dim=256\nqk_nope_head_dim=192\nqk_rope_head_dim=64\nrope=enabled=True, theta=1000000, type=default\nrope_interleave=True\ntype=GLM DSA/MLA\nv_head_dim=256"]
+  n3["residual_add_0\nresidual"]
+  n4["post_attention_layernorm\nRMSNorm"]
+  n5["router\nMoE router\nactivated_experts=8\nexperts=256\nnorm_topk_prob=True\nroute_scale=2.5\nscore_correction_bias=True\nscoring_func=sigmoid\nshared_experts=1\ntopk_group=1\ntopk_method=noaux_tc"]
+  n6["expert_gate/up/down_proj\nrouted expert SwiGLU\nactivated_experts=8\nactivation=silu\nexpert_dtype=bfloat16\nexperts=256\nintermediate_size=2048\nmoe_intermediate_size=2048\nnorm_topk_prob=True\nroute_scale=2.5\nscoring_func=sigmoid\ntopk_method=noaux_tc\ntype=MoE"]
+  n7["shared_expert_gate/up/down_proj\nshared expert SwiGLU\nactivation=silu\nintermediate_size=2048\ntype=shared_dense"]
+  n8["combine_experts\nMoE combine"]
+  n9["residual_add_1\nresidual"]
+  n0 --> n1
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6
+  n8 --> n9
+  n4 --> n7
+  n6 --> n8
+  n7 --> n8

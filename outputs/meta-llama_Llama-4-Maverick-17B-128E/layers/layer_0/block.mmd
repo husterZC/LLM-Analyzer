@@ -1,0 +1,26 @@
+flowchart TD
+  title["layers.0: Llama4TextDecoderLayer[DenseMLP]"]
+  title -.-> n0
+  n0["input\nactivation"]
+  n1["input_layernorm\nRMSNorm"]
+  n2["q_proj/k_proj/v_proj\nprojection\nattention_heads=40\nhead_dim=128\nkv_heads=8"]
+  n3["rotary_position_embedding\nRoPE\nenabled=True\nlayer_uses_rope=True\nno_rope_layer_interval=4\ntheta=500000.0"]
+  n4["attention\nattention_kernel\nattention_chunk_size=8192\nattention_dropout=0.0"]
+  n5["o_proj\nprojection"]
+  n6["residual_add_0\nresidual"]
+  n7["post_attention_layernorm\nRMSNorm"]
+  n8["gate_proj/up_proj\nprojection\nintermediate_size=16384"]
+  n9["activation\nsilu"]
+  n10["down_proj\nprojection"]
+  n11["residual_add_1\nresidual"]
+  n0 --> n1
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6
+  n6 --> n7
+  n7 --> n8
+  n8 --> n9
+  n9 --> n10
+  n10 --> n11

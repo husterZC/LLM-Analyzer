@@ -1,0 +1,33 @@
+flowchart TD
+  title["layers.6 GLM DSA attention detail"]
+  x["Layer input\nhidden=6144"] --> norm["input_layernorm RMSNorm"]
+  norm --> qa["q_a_proj\nhidden -> q_lora_rank=2048"]
+  qa --> qan["q_a_layernorm"]
+  qan --> qb["q_b_proj\nq_lora -> heads * qk_head_dim\nheads=64 qk=256"]
+  qb --> qsplit["split Q\nNoPE=192 RoPE=64"]
+  qsplit --> qrope["RoPE Q\ninterleave=True"]
+  norm --> kva["kv_a_proj_with_mqa\nhidden -> kv_lora + RoPE key\nkv_lora=512"]
+  kva --> kvlat["split KV latent"]
+  kva --> krope["split MQA RoPE key"]
+  kvlat --> kvnorm["kv_a_layernorm"]
+  kvnorm --> kvb["kv_b_proj\nkv_lora -> heads * (NoPE key + V)\nV=256"]
+  kvb --> ksplit["split K NoPE and V"]
+  krope --> krope2["RoPE K + expand across heads"]
+  ksplit --> kcat["concat K NoPE + K RoPE"]
+  krope2 --> kcat
+  ksplit --> vcache["V cache"]
+  kcat --> kcache["K cache"]
+  qan --> iq["indexer wq_b\nindex_heads=32 index_dim=128"]
+  norm --> ik["indexer wk + k_norm"]
+  norm --> iw["indexer weights_proj"]
+  iq --> iscore["index_score = ReLU(Q K^T) * weights"]
+  ik --> iscore
+  iw --> iscore
+  iscore --> idx["top-k sparse indices\nindex_topk=2048"]
+  idx --> dsa
+  qrope --> dsa["dynamic sparse attention\nQK dim=256 V dim=256"]
+  kcache --> dsa
+  vcache --> dsa
+  dsa --> merge["merge heads\nheads * V -> packed"]
+  merge --> out["o_proj\npacked -> hidden"]
+  out --> residual["residual add"]

@@ -1,0 +1,21 @@
+flowchart TD
+  title["layers.0 BLOOM attention detail"]
+  x["Layer input\nhidden=14336"] --> norm["input_layernorm LayerNorm"]
+  norm --> qkv["query_key_value fused linear\nhidden -> 3 * hidden\nheads=112 head_dim=128"]
+  qkv --> split["split Q / K / V"]
+  split --> q["Q reshape\n[B,T,112,128]"]
+  split --> k["K reshape\n[B,T,112,128]"]
+  split --> v["V reshape\n[B,T,112,128]"]
+  q --> scores["scores = Q K^T / sqrt(head_dim)"]
+  k --> kcache["K cache"]
+  v --> vcache["V cache"]
+  kcache --> scores
+  scores --> alibi["add ALiBi positional bias"]
+  alibi --> mask["causal mask"]
+  mask --> softmax["softmax\nfp32=True"]
+  softmax --> dropout["dropout=unknown"]
+  dropout --> ctx["context = probs V"]
+  vcache --> ctx
+  ctx --> merge["merge heads"]
+  merge --> out["self_attention.dense\nheads * head_dim -> hidden"]
+  out --> residual["residual add"]

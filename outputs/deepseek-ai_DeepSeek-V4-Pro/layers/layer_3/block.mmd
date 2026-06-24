@@ -1,0 +1,27 @@
+flowchart TD
+  title["layers.3: DeepseekV4Block[MoE]"]
+  title -.-> n0
+  n0["input\nactivation\nshape=[batch, sequence, hc_mult, hidden]"]
+  n1["hc_attn_pre\nHyperConnectionPre\nhc_eps=1e-06\nhc_mult=4\nhc_sinkhorn_iters=20"]
+  n2["attn_norm\nRMSNorm"]
+  n3["mla_sparse_attention\nDeepSeek MLA sparse attention\nattention_heads=128\ncompress_mode=pooled_compression\ncompress_ratio=128\ncompress_rope_theta=160000\nhead_dim=512\nindex_head_dim=128\nindex_n_heads=64\nindex_topk=1024\nkv_heads=1\no_groups=16\no_lora_rank=1024\nq_lora_rank=1536\nqk_nope_head_dim=448\nqk_rope_head_dim=64\nrope=enabled=True, scaling={'beta_fast': 32, 'beta_slow': 1, 'factor': 16, 'original_max_position_embeddings': 65536, 'type': 'yarn'}, theta=10000\nsliding_window=128\ntype=MLA sparse attention"]
+  n4["hc_attn_post\nHyperConnectionPost\nhc_eps=1e-06\nhc_mult=4\nhc_sinkhorn_iters=20"]
+  n5["hc_ffn_pre\nHyperConnectionPre\nhc_eps=1e-06\nhc_mult=4\nhc_sinkhorn_iters=20"]
+  n6["ffn_norm\nRMSNorm"]
+  n7["router\nMoE router\nactivated_experts=6\nexperts=384\nhash_routing=False\nnorm_topk_prob=True\nnum_hash_layers=3\nroute_scale=2.5\nscoring_func=sqrtsoftplus\nshared_experts=1\ntopk_method=noaux_tc"]
+  n8["expert_gate/up/down_proj\nrouted FP4 expert SwiGLU\nactivated_experts=6\nactivation=silu\nexpert_dtype=fp4\nexperts=384\nintermediate_size=3072\nmoe_intermediate_size=3072\nnorm_topk_prob=True\nroute_scale=2.5\nscoring_func=sqrtsoftplus\nswiglu_limit=10.0\ntopk_method=noaux_tc\ntype=MoE"]
+  n9["shared_expert_gate/up/down_proj\nshared expert SwiGLU\nactivation=silu\nintermediate_size=3072\nswiglu_limit=10.0\ntype=shared_dense"]
+  n10["combine_experts\nMoE combine"]
+  n11["hc_ffn_post\nHyperConnectionPost\nhc_eps=1e-06\nhc_mult=4\nhc_sinkhorn_iters=20"]
+  n0 --> n1
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6
+  n6 --> n7
+  n7 --> n8
+  n10 --> n11
+  n6 --> n9
+  n8 --> n10
+  n9 --> n10

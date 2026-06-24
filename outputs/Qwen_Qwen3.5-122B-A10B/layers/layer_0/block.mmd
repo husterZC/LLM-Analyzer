@@ -1,0 +1,27 @@
+flowchart TD
+  title["layers.0: Qwen3_5MoeDecoderLayer[MoE]"]
+  title -.-> n0
+  n0["input\nactivation"]
+  n1["input_layernorm\nRMSNorm"]
+  n2["q_proj/k_proj/v_proj\nprojection\nattention_heads=32\nhead_dim=256\nkv_heads=2"]
+  n3["rotary_position_embedding\nRoPE\nenabled=True\ntheta=10000000\ntype=default"]
+  n4["attention\nattention_kernel\nattention_dropout=0.0"]
+  n5["o_proj\nprojection"]
+  n6["residual_add_0\nresidual"]
+  n7["post_attention_layernorm\nRMSNorm"]
+  n8["router\nMoE router\nactivated_experts=8\nexperts=256\nrouter_aux_loss_coef=0.001"]
+  n9["expert_gate/up/down_proj\nrouted expert MLP\nactivated_experts=8\nactivation=silu\nexpert_dtype=bfloat16\nexperts=256\nintermediate_size=1024\nmoe_intermediate_size=1024\ntype=MoE"]
+  n10["combine_experts\nMoE combine"]
+  n11["residual_add_1\nresidual"]
+  n0 --> n1
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6
+  n6 --> n7
+  n7 --> n8
+  n8 --> n9
+  n9 --> n10
+  n10 --> n11
+  n9 --> n10

@@ -1,0 +1,4498 @@
+{
+  "architectures": [
+    "Llama4ForConditionalGeneration"
+  ],
+  "files": [
+    ".gitattributes",
+    "LICENSE",
+    "README.md",
+    "USE_POLICY.md",
+    "config.json",
+    "generation_config.json",
+    "model.safetensors.index.json",
+    "preprocessor_config.json",
+    "processor_config.json",
+    "special_tokens_map.json",
+    "tokenizer.json",
+    "tokenizer.model",
+    "tokenizer_config.json"
+  ],
+  "layers": [
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 0,
+      "name": "layers.0",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 1,
+      "name": "layers.1",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 2,
+      "name": "layers.2",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": false,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "NoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 3,
+      "name": "layers.3",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 4,
+      "name": "layers.4",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 5,
+      "name": "layers.5",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 6,
+      "name": "layers.6",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": false,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "NoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 7,
+      "name": "layers.7",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 8,
+      "name": "layers.8",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 9,
+      "name": "layers.9",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 10,
+      "name": "layers.10",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": false,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "NoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 11,
+      "name": "layers.11",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 12,
+      "name": "layers.12",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 13,
+      "name": "layers.13",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 14,
+      "name": "layers.14",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": false,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "NoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 15,
+      "name": "layers.15",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 16,
+      "name": "layers.16",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 17,
+      "name": "layers.17",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 18,
+      "name": "layers.18",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": false,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "NoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 19,
+      "name": "layers.19",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 20,
+      "name": "layers.20",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 21,
+      "name": "layers.21",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 22,
+      "name": "layers.22",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": false,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "NoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 23,
+      "name": "layers.23",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 24,
+      "name": "layers.24",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 25,
+      "name": "layers.25",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 26,
+      "name": "layers.26",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": false,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "NoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 27,
+      "name": "layers.27",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 28,
+      "name": "layers.28",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 29,
+      "name": "layers.29",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 30,
+      "name": "layers.30",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": false,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "NoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 31,
+      "name": "layers.31",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 32,
+      "name": "layers.32",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 33,
+      "name": "layers.33",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 34,
+      "name": "layers.34",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": false,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "NoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 35,
+      "name": "layers.35",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 36,
+      "name": "layers.36",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 37,
+      "name": "layers.37",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 38,
+      "name": "layers.38",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": false,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "NoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 39,
+      "name": "layers.39",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 40,
+      "name": "layers.40",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 41,
+      "name": "layers.41",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 42,
+      "name": "layers.42",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": false,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "NoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 43,
+      "name": "layers.43",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 44,
+      "name": "layers.44",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 45,
+      "name": "layers.45",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": true,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "RoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "intermediate_size": 16384
+          },
+          "kind": "projection",
+          "name": "gate_proj/up_proj"
+        },
+        {
+          "details": {},
+          "kind": "silu",
+          "name": "activation"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "down_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 46,
+      "name": "layers.46",
+      "type": "Llama4TextDecoderLayer[DenseMLP]"
+    },
+    {
+      "components": [
+        {
+          "details": {},
+          "kind": "activation",
+          "name": "input"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "input_layernorm"
+        },
+        {
+          "details": {
+            "attention_heads": 40,
+            "head_dim": 128,
+            "kv_heads": 8
+          },
+          "kind": "projection",
+          "name": "q_proj/k_proj/v_proj"
+        },
+        {
+          "details": {
+            "enabled": true,
+            "layer_uses_rope": false,
+            "no_rope_layer_interval": 4,
+            "theta": 500000.0
+          },
+          "kind": "NoPE",
+          "name": "rotary_position_embedding"
+        },
+        {
+          "details": {
+            "attention_chunk_size": 8192,
+            "attention_dropout": 0.0
+          },
+          "kind": "attention_kernel",
+          "name": "attention"
+        },
+        {
+          "details": {},
+          "kind": "projection",
+          "name": "o_proj"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_0"
+        },
+        {
+          "details": {},
+          "kind": "RMSNorm",
+          "name": "post_attention_layernorm"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "experts": 128,
+            "router_aux_loss_coef": 0.001
+          },
+          "kind": "MoE router",
+          "name": "router"
+        },
+        {
+          "details": {
+            "activated_experts": 1,
+            "activation": "silu",
+            "experts": 128,
+            "intermediate_size": 8192,
+            "type": "MoE"
+          },
+          "kind": "routed expert MLP",
+          "name": "expert_gate/up/down_proj"
+        },
+        {
+          "details": {
+            "activation": "silu",
+            "intermediate_size": 8192,
+            "type": "shared_dense"
+          },
+          "kind": "shared expert MLP",
+          "name": "shared_expert_gate/up/down_proj"
+        },
+        {
+          "details": {},
+          "kind": "MoE combine",
+          "name": "combine_experts"
+        },
+        {
+          "details": {},
+          "kind": "residual",
+          "name": "residual_add_1"
+        }
+      ],
+      "index": 47,
+      "name": "layers.47",
+      "type": "Llama4TextDecoderLayer[MoE]"
+    }
+  ],
+  "model_id": "meta-llama/Llama-4-Maverick-17B-128E",
+  "model_type": "llama4",
+  "notes": [
+    "Vision config detected; architecture is multimodal with image features fused into the text model.",
+    "MoE detected with interleaved sparse/dense layers from interleave_moe_layer_step.",
+    "MoE layer indices: 1, 3, 5, 7, 9, 11, 13, 15, ... 41, 43, 45, 47",
+    "Llama 4 empty no_rope_layers interpreted with the Transformers default NoPE interval of 4."
+  ],
+  "revision": "10751cb97a4d7c90f7ed89196b98eb8220cfa1c2",
+  "skipped_weight_files": [
+    "model-00001-of-00055.safetensors",
+    "model-00002-of-00055.safetensors",
+    "model-00003-of-00055.safetensors",
+    "model-00004-of-00055.safetensors",
+    "model-00005-of-00055.safetensors",
+    "model-00006-of-00055.safetensors",
+    "model-00007-of-00055.safetensors",
+    "model-00008-of-00055.safetensors",
+    "model-00009-of-00055.safetensors",
+    "model-00010-of-00055.safetensors",
+    "model-00011-of-00055.safetensors",
+    "model-00012-of-00055.safetensors",
+    "model-00013-of-00055.safetensors",
+    "model-00014-of-00055.safetensors",
+    "model-00015-of-00055.safetensors",
+    "model-00016-of-00055.safetensors",
+    "model-00017-of-00055.safetensors",
+    "model-00018-of-00055.safetensors",
+    "model-00019-of-00055.safetensors",
+    "model-00020-of-00055.safetensors",
+    "model-00021-of-00055.safetensors",
+    "model-00022-of-00055.safetensors",
+    "model-00023-of-00055.safetensors",
+    "model-00024-of-00055.safetensors",
+    "model-00025-of-00055.safetensors",
+    "model-00026-of-00055.safetensors",
+    "model-00027-of-00055.safetensors",
+    "model-00028-of-00055.safetensors",
+    "model-00029-of-00055.safetensors",
+    "model-00030-of-00055.safetensors",
+    "model-00031-of-00055.safetensors",
+    "model-00032-of-00055.safetensors",
+    "model-00033-of-00055.safetensors",
+    "model-00034-of-00055.safetensors",
+    "model-00035-of-00055.safetensors",
+    "model-00036-of-00055.safetensors",
+    "model-00037-of-00055.safetensors",
+    "model-00038-of-00055.safetensors",
+    "model-00039-of-00055.safetensors",
+    "model-00040-of-00055.safetensors",
+    "model-00041-of-00055.safetensors",
+    "model-00042-of-00055.safetensors",
+    "model-00043-of-00055.safetensors",
+    "model-00044-of-00055.safetensors",
+    "model-00045-of-00055.safetensors",
+    "model-00046-of-00055.safetensors",
+    "model-00047-of-00055.safetensors",
+    "model-00048-of-00055.safetensors",
+    "model-00049-of-00055.safetensors",
+    "model-00050-of-00055.safetensors",
+    "model-00051-of-00055.safetensors",
+    "model-00052-of-00055.safetensors",
+    "model-00053-of-00055.safetensors",
+    "model-00054-of-00055.safetensors",
+    "model-00055-of-00055.safetensors"
+  ],
+  "summary": {
+    "architectures": [
+      "Llama4ForConditionalGeneration"
+    ],
+    "attention_heads": 40,
+    "hidden_size": 5120,
+    "intermediate_size": 8192,
+    "kv_heads": 8,
+    "layers": 48,
+    "max_position_embeddings": 262144,
+    "modalities": [
+      "text",
+      "image"
+    ],
+    "model_type": "llama4",
+    "moe": {
+      "activated_experts": 1,
+      "dense_mlp_layers": 24,
+      "enabled": true,
+      "experts": 128,
+      "interleave_moe_layer_step": 2,
+      "moe_layers": 24
+    },
+    "rope": {
+      "enabled": true,
+      "no_rope_layer_interval": 4,
+      "theta": 500000.0
+    },
+    "vocab_size": 202048
+  },
+  "text_decoder": {
+    "activation": "silu",
+    "attention": {
+      "attention_bias": false,
+      "attention_chunk_size": 8192,
+      "attention_dropout": 0.0,
+      "head_dim": 128,
+      "heads": 40,
+      "kv_heads": 8,
+      "use_qk_norm": false
+    },
+    "dense_mlp_layers": [
+      0,
+      2,
+      4,
+      6,
+      8,
+      10,
+      12,
+      14,
+      16,
+      18,
+      20,
+      22,
+      24,
+      26,
+      28,
+      30,
+      32,
+      34,
+      36,
+      38,
+      40,
+      42,
+      44,
+      46
+    ],
+    "layer_type": "Llama4TextDecoderLayer",
+    "layers": 48,
+    "mlp": {
+      "activated_experts": 1,
+      "activation": "silu",
+      "experts": 128,
+      "intermediate_size": 8192,
+      "type": "MoE"
+    },
+    "model_type": "llama4_text",
+    "moe_layers": [
+      1,
+      3,
+      5,
+      7,
+      9,
+      11,
+      13,
+      15,
+      17,
+      19,
+      21,
+      23,
+      25,
+      27,
+      29,
+      31,
+      33,
+      35,
+      37,
+      39,
+      41,
+      43,
+      45,
+      47
+    ],
+    "norm": "RMSNorm"
+  },
+  "vision_encoder": {
+    "attention_heads": 16,
+    "hidden_size": 1408,
+    "image_size": 336,
+    "intermediate_size": 5632,
+    "layers": 34,
+    "model_type": "llama4_vision_model",
+    "patch_size": 14
+  }
+}

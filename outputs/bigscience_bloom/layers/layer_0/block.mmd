@@ -1,0 +1,20 @@
+flowchart TD
+  title["layers.0: BloomBlock"]
+  title -.-> n0
+  n0["input\nactivation"]
+  n1["input_layernorm\nLayerNorm"]
+  n2["bloom_attention\nBLOOM fused-QKV attention with ALiBi\nalibi=True\nattention_heads=112\nattention_softmax_in_fp32=True\nhead_dim=128\nkv_heads=112\nlayer_index=0\npretraining_tp=4\ntype=MHA + ALiBi"]
+  n3["residual_add_0\nresidual"]
+  n4["post_attention_layernorm\nLayerNorm"]
+  n5["dense_h_to_4h\nprojection\nintermediate_size=57344"]
+  n6["activation\ngelu"]
+  n7["dense_4h_to_h\nprojection"]
+  n8["residual_add_1\nresidual"]
+  n0 --> n1
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6
+  n6 --> n7
+  n7 --> n8

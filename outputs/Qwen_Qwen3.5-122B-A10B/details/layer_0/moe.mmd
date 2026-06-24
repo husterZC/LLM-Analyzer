@@ -1,0 +1,13 @@
+flowchart TD
+  title["layers.0 MoE routing detail"]
+  x["Post-attention hidden states\n[B,T,3072]"] --> flat["flatten tokens\n[B*T,hidden]"]
+  flat --> router["router linear\nhidden -> 256 experts"]
+  router --> topk["top-k select\nk=8"]
+  topk --> score["sigmoid / routing weights"]
+  score --> dispatch["dispatch or scale token copies"]
+  dispatch --> experts["routed expert MLPs\nexperts=256\nintermediate=1024\nactivation=silu\ndtype=bfloat16"]
+  experts --> reduce["sum routed expert outputs"]
+  experts --> add["routed expert weighted sum"]
+  add --> output["reshape to [B,T,hidden]"]
+  output --> residual["residual add"]
+  router -.-> aux["router aux loss coef=0.001"]

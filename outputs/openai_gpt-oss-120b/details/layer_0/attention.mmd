@@ -1,0 +1,20 @@
+flowchart TD
+  title["layers.0 attention detail"]
+  x["Layer input\nhidden=2880"] --> norm["Input norm"]
+  norm --> qkv["Q/K/V projections\nQ: hidden -> heads * head_dim\nK,V: hidden -> kv_heads * head_dim\nheads=64 kv_heads=8 head_dim=64"]
+  qkv --> q["Q reshape\n[B,T,64,64]"]
+  qkv --> k["K reshape\n[B,T,8,64]"]
+  qkv --> v["V reshape\n[B,T,8,64]"]
+  q --> pos
+  k --> pos
+  pos["RoPE\ntheta=150000"]
+  pos --> cache["KV cache update / repeat_kv\ngroups=8"]
+  v --> cache
+  cache --> scores["scores = Q K^T * scale"]
+  scores --> mask["causal mask\nsliding_window=128"]
+  mask --> softmax["softmax"]
+  softmax --> dropout["dropout=0.0"]
+  dropout --> context["context = probs V"]
+  context --> reshape["transpose / reshape\n[B,T,hidden]"]
+  reshape --> out["o_proj\nheads * head_dim -> hidden"]
+  out --> residual["residual add"]

@@ -1,0 +1,32 @@
+flowchart TD
+  title["layers.3 DeepSeek V4 MLA detail"]
+  x["HC-pre attention state\nhidden=7168"] --> norm["attn_norm RMSNorm"]
+  norm --> wqa["wq_a\nhidden -> q_lora_rank=1536"]
+  wqa --> qnorm["q_norm RMSNorm"]
+  qnorm --> wqb["wq_b\nq_lora -> heads * head_dim\nheads=128 head_dim=512"]
+  wqb --> qsplit["reshape Q\n[B,S,128,512]\nNoPE=448 RoPE=64"]
+  qsplit --> qscale["RMS scale Q per head"]
+  qscale --> qrope["RoPE on Q tail dims"]
+  norm --> wkv["wkv\nhidden -> compact KV head_dim=512"]
+  wkv --> kvnorm["kv_norm RMSNorm"]
+  kvnorm --> kvrope["RoPE on KV tail dims"]
+  kvrope --> kvquant["FP8 activation quant\nnon-RoPE dims only"]
+  kvquant --> win["window KV cache\nsliding_window=128"]
+  win --> topk["window top-k indices"]
+  norm --> comp["Compressor\nratio=128\ngated pooling over tokens"]
+  comp --> ckv["compressed KV cache\nmode=pooled_compression"]
+  qnorm --> idxq["Indexer wq_b\nindex_heads=64 index_dim=128"]
+  idxq --> idxscore["index_score = ReLU(Q Kc^T) * weights"]
+  ckv --> idxscore
+  idxscore --> ctopk["compressed top-k\nindex_topk=1024"]
+  topk --> cat["concat window + compressed indices"]
+  ctopk --> cat
+  ckv --> sparse
+  cat --> sparse
+  qrope --> sparse["sparse_attn\nonline softmax + attn_sink\nscale=1/sqrt(head_dim)"]
+  kvquant --> sparse
+  sparse --> invrope["inverse RoPE on output tail dims"]
+  invrope --> group["group heads\no_groups=16"]
+  group --> woa["wo_a grouped low-rank\nhead groups -> o_lora_rank=1024"]
+  woa --> wob["wo_b\no_lora -> hidden"]
+  wob --> hcpost["HC-post attention state"]

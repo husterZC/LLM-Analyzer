@@ -1,0 +1,20 @@
+flowchart TD
+  title["layers.0: GlmMoeDsaDecoderLayer[DenseMLP]"]
+  title -.-> n0
+  n0["input\nactivation"]
+  n1["input_layernorm\nRMSNorm"]
+  n2["glm_dsa_attention\nGLM DSA/MLA sparse attention\nattention_heads=64\nhead_dim=64\nindex_head_dim=128\nindex_n_heads=32\nindex_topk=2048\nindexer_rope_interleave=True\nkv_heads=64\nkv_lora_rank=512\nq_lora_rank=2048\nqk_head_dim=256\nqk_nope_head_dim=192\nqk_rope_head_dim=64\nrope=enabled=True, theta=1000000, type=default\nrope_interleave=True\ntype=GLM DSA/MLA\nv_head_dim=256"]
+  n3["residual_add_0\nresidual"]
+  n4["post_attention_layernorm\nRMSNorm"]
+  n5["gate_proj/up_proj\nprojection\nintermediate_size=12288"]
+  n6["activation\nsilu"]
+  n7["down_proj\nprojection"]
+  n8["residual_add_1\nresidual"]
+  n0 --> n1
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6
+  n6 --> n7
+  n7 --> n8

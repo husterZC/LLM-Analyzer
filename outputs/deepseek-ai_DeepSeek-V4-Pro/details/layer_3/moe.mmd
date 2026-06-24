@@ -1,0 +1,14 @@
+flowchart TD
+  title["layers.3 MoE routing detail"]
+  x["FFN-normalized HC-pre states\n[B,T,7168]"] --> flat["flatten tokens\n[B*T,hidden]"]
+  flat --> router["router linear\nhidden -> 384 experts"]
+  router --> topk["top-k select\nk=6"]
+  topk --> score["sqrtsoftplus / normalize / scale=2.5"]
+  score --> dispatch["dispatch or scale token copies"]
+  dispatch --> experts["routed expert MLPs\nexperts=384\nintermediate=3072\nactivation=silu\ndtype=fp4"]
+  experts --> reduce["sum routed expert outputs"]
+  flat --> shared["shared expert MLP\nintermediate=3072\nactivation=silu"]
+  reduce --> add["add routed + shared"]
+  shared --> add
+  add --> output["reshape to [B,T,hidden]"]
+  output --> residual["HC-post FFN combine"]
