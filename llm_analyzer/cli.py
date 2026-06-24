@@ -1,6 +1,8 @@
 import argparse
 import sys
+from dataclasses import dataclass
 from pathlib import Path
+from typing import List
 
 from .extract import extract_from_snapshot
 from .hf import HuggingFaceError, HuggingFaceMetadataClient, load_token
@@ -30,6 +32,8 @@ def main(argv=None) -> int:
             return _cmd_inspect(args)
         if args.command == "arch":
             return _cmd_arch(args)
+        if args.command == "batch":
+            return _cmd_batch(args)
         parser.error("unknown command %s" % args.command)
         return 2
     except HuggingFaceError as exc:
@@ -63,11 +67,20 @@ def _build_parser() -> argparse.ArgumentParser:
     arch.add_argument("--format", choices=("mermaid", "json", "summary", "onnx"), default="mermaid")
     arch.add_argument("--out", help="Output file. Prints to stdout when omitted.")
 
+    batch = subparsers.add_parser("batch", help="Analyze every model in a pipe-delimited model list.")
+    batch.add_argument("model_list", help="Model list file: model|layers|attention_layers|mlp_layers|moe_layers")
+    batch.add_argument("--out-dir", default="outputs", help="Output directory root, default: outputs")
+    _add_hf_options(batch)
+
     return parser
 
 
 def _add_hf_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("model", help="Hugging Face model id or URL.")
+    _add_hf_options(parser)
+
+
+def _add_hf_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--revision", default="main")
     parser.add_argument("--cache-dir", default=".llm_analyzer_cache")
     parser.add_argument("--hf-token", default=None, help="Hugging Face token. Prefer env vars or .hf_token.txt.")
@@ -143,6 +156,167 @@ def _cmd_arch(args) -> int:
     else:
         print(output)
     return 0
+
+
+@dataclass
+class BatchPlan:
+    model: str
+    layers: List[int]
+    attention_layers: List[int]
+    mlp_layers: List[int]
+    moe_layers: List[int]
+
+
+def _cmd_batch(args) -> int:
+    plans = _read_model_list(Path(args.model_list))
+    if not plans:
+        raise ValueError("model list has no model entries: %s" % args.model_list)
+
+    for plan in plans:
+        print("Analyzing %s" % plan.model)
+        fetch_args = argparse.Namespace(
+            model=plan.model,
+            revision=args.revision,
+            cache_dir=args.cache_dir,
+            hf_token=args.hf_token,
+            token_file=args.token_file,
+            max_file_mb=args.max_file_mb,
+        )
+        result = _fetch(fetch_args)
+        architecture = extract_from_snapshot(
+            snapshot_dir=result.snapshot_dir,
+            model_id=result.model_id,
+            revision=result.revision,
+            files=result.downloaded_files,
+            skipped_weight_files=result.skipped_weight_files,
+        )
+
+        output_root = Path(args.out_dir) / _model_slug(result.model_id)
+        written = 0
+        written += _write_text(output_root / "overview" / "model.mmd", render_mermaid_model(architecture))
+        written += _write_text(output_root / "ir" / "architecture.json", render_json(architecture))
+
+        for layer_index in plan.layers:
+            written += _write_text(
+                output_root / "layers" / ("layer_%d" % layer_index) / "block.mmd",
+                render_mermaid_layer(architecture, layer_index),
+            )
+            written += _write_onnx(
+                architecture,
+                output_root / "onnx" / ("layer_%d" % layer_index) / "kernels.onnx",
+                level="layer",
+                layer_index=layer_index,
+            )
+
+        for layer_index in plan.attention_layers:
+            written += _write_text(
+                output_root / "details" / ("layer_%d" % layer_index) / "attention.mmd",
+                render_mermaid_attention(architecture, layer_index),
+            )
+            written += _write_onnx(
+                architecture,
+                output_root / "onnx" / ("layer_%d" % layer_index) / "attention.onnx",
+                level="attention",
+                layer_index=layer_index,
+            )
+
+        for layer_index in plan.mlp_layers:
+            written += _write_text(
+                output_root / "details" / ("layer_%d" % layer_index) / "mlp.mmd",
+                render_mermaid_mlp(architecture, layer_index),
+            )
+            written += _write_onnx(
+                architecture,
+                output_root / "onnx" / ("layer_%d" % layer_index) / "mlp.onnx",
+                level="mlp",
+                layer_index=layer_index,
+            )
+
+        for layer_index in plan.moe_layers:
+            written += _write_text(
+                output_root / "details" / ("layer_%d" % layer_index) / "moe.mmd",
+                render_mermaid_moe(architecture, layer_index),
+            )
+            written += _write_onnx(
+                architecture,
+                output_root / "onnx" / ("layer_%d" % layer_index) / "moe.onnx",
+                level="moe",
+                layer_index=layer_index,
+            )
+
+        print("  Wrote %d files under %s" % (written, output_root))
+    return 0
+
+
+def _write_text(path: Path, text: str) -> int:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return 1
+
+
+def _write_onnx(architecture, path: Path, level: str, layer_index: int) -> int:
+    export_onnx_kernel_graph(
+        architecture=architecture,
+        output_path=path,
+        level=level,
+        layer_index=layer_index,
+    )
+    return 1
+
+
+def _read_model_list(path: Path) -> List[BatchPlan]:
+    if not path.exists():
+        raise ValueError("model list does not exist: %s" % path)
+
+    plans = []
+    for line_number, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+
+        fields = [field.strip() for field in line.split("|")]
+        if len(fields) != 5:
+            raise ValueError(
+                "%s:%d expected 5 pipe-delimited fields: "
+                "model|layers|attention_layers|mlp_layers|moe_layers" % (path, line_number)
+            )
+
+        model, layers, attention_layers, mlp_layers, moe_layers = fields
+        if not model:
+            raise ValueError("%s:%d model field is empty" % (path, line_number))
+        plans.append(
+            BatchPlan(
+                model=model,
+                layers=_parse_layer_list(layers, path, line_number, "layers"),
+                attention_layers=_parse_layer_list(attention_layers, path, line_number, "attention_layers"),
+                mlp_layers=_parse_layer_list(mlp_layers, path, line_number, "mlp_layers"),
+                moe_layers=_parse_layer_list(moe_layers, path, line_number, "moe_layers"),
+            )
+        )
+    return plans
+
+
+def _parse_layer_list(value: str, path: Path, line_number: int, field_name: str) -> List[int]:
+    layers = []
+    seen = set()
+    for raw_item in value.split(","):
+        item = raw_item.strip()
+        if not item:
+            continue
+        try:
+            layer = int(item)
+        except ValueError as exc:
+            raise ValueError("%s:%d invalid %s layer: %s" % (path, line_number, field_name, item)) from exc
+        if layer < 0:
+            raise ValueError("%s:%d %s layer must be non-negative: %d" % (path, line_number, field_name, layer))
+        if layer not in seen:
+            seen.add(layer)
+            layers.append(layer)
+    return layers
+
+
+def _model_slug(model_id: str) -> str:
+    return _normalize_model_id(model_id).replace("/", "_")
 
 
 def _fetch(args):

@@ -1,5 +1,9 @@
-PYTHON ?= /usr/local/anaconda3/bin/python3.11
+DEFAULT_PYTHON := $(shell if [ -x .venv/bin/python ]; then printf '%s' .venv/bin/python; else printf '%s' /usr/local/anaconda3/bin/python3.11; fi)
+PYTHON ?= $(DEFAULT_PYTHON)
 MODEL ?= meta-llama/Llama-4-Maverick-17B-128E
+MODEL_LIST ?= model_lists/evaluated_models.txt
+REVISION ?= main
+MAX_FILE_MB ?= 50.0
 LAYER ?= 0
 MOE_LAYER ?= 1
 OUT_DIR ?= outputs
@@ -13,7 +17,7 @@ DETAILS_DIR := $(MODEL_OUT_DIR)/details
 IR_DIR := $(MODEL_OUT_DIR)/ir
 ONNX_DIR := $(MODEL_OUT_DIR)/onnx
 
-.PHONY: help setup setup-onnx test compile fetch inspect arch model-diagram layer-diagram attention-diagram mlp-diagram moe-detail-diagram detail-diagrams moe-layer-diagram json kernel-onnx moe-kernel-onnx attention-onnx mlp-onnx moe-onnx onnx-graphs all clean-cache
+.PHONY: help setup setup-onnx test compile fetch inspect arch model-diagram layer-diagram attention-diagram mlp-diagram moe-detail-diagram detail-diagrams moe-layer-diagram json kernel-onnx moe-kernel-onnx attention-onnx mlp-onnx moe-onnx onnx-graphs analyze-list reproduce-evaluated all clean-cache
 
 help:
 	@echo "LLM-Analyzer targets"
@@ -37,6 +41,8 @@ help:
 	@echo "  make mlp-onnx           Write MLP kernel-flow ONNX graph, default LAYER=0"
 	@echo "  make moe-onnx           Write MoE kernel-flow ONNX graph, default MOE_LAYER=1"
 	@echo "  make onnx-graphs        Write layer, attention, MLP, and MoE ONNX graphs"
+	@echo "  make analyze-list       Analyze every model in MODEL_LIST"
+	@echo "  make reproduce-evaluated Rebuild outputs for the included evaluated model list"
 	@echo "  make arch               Write model, layer, and JSON outputs"
 	@echo "  make all                Run test and arch"
 	@echo "  make clean-cache        Remove local metadata cache"
@@ -44,6 +50,9 @@ help:
 	@echo "Variables:"
 	@echo "  PYTHON=$(PYTHON)"
 	@echo "  MODEL=$(MODEL)"
+	@echo "  MODEL_LIST=$(MODEL_LIST)"
+	@echo "  REVISION=$(REVISION)"
+	@echo "  MAX_FILE_MB=$(MAX_FILE_MB)"
 	@echo "  LAYER=$(LAYER)"
 	@echo "  MOE_LAYER=$(MOE_LAYER)"
 	@echo "  OUT_DIR=$(OUT_DIR)"
@@ -52,6 +61,7 @@ help:
 	@echo ""
 	@echo "Example:"
 	@echo "  make arch MODEL=Qwen/Qwen2.5-7B-Instruct"
+	@echo "  make analyze-list MODEL_LIST=model_lists/evaluated_models.txt"
 
 setup:
 	$(PYTHON) -m venv .venv
@@ -69,30 +79,30 @@ compile:
 	$(PYTHON) -m py_compile llm_analyzer/*.py
 
 fetch:
-	$(PYTHON) -m llm_analyzer fetch "$(MODEL)" --cache-dir "$(CACHE_DIR)"
+	$(PYTHON) -m llm_analyzer fetch "$(MODEL)" --revision "$(REVISION)" --cache-dir "$(CACHE_DIR)" --max-file-mb "$(MAX_FILE_MB)"
 
 inspect:
-	$(PYTHON) -m llm_analyzer inspect "$(MODEL)" --cache-dir "$(CACHE_DIR)"
+	$(PYTHON) -m llm_analyzer inspect "$(MODEL)" --revision "$(REVISION)" --cache-dir "$(CACHE_DIR)" --max-file-mb "$(MAX_FILE_MB)"
 
 model-diagram:
 	mkdir -p "$(OVERVIEW_DIR)"
-	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --cache-dir "$(CACHE_DIR)" --level model --format mermaid --out "$(OVERVIEW_DIR)/model.mmd"
+	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --revision "$(REVISION)" --cache-dir "$(CACHE_DIR)" --max-file-mb "$(MAX_FILE_MB)" --level model --format mermaid --out "$(OVERVIEW_DIR)/model.mmd"
 
 layer-diagram:
 	mkdir -p "$(LAYERS_DIR)/layer_$(LAYER)"
-	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --cache-dir "$(CACHE_DIR)" --level layer --layer "$(LAYER)" --format mermaid --out "$(LAYERS_DIR)/layer_$(LAYER)/block.mmd"
+	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --revision "$(REVISION)" --cache-dir "$(CACHE_DIR)" --max-file-mb "$(MAX_FILE_MB)" --level layer --layer "$(LAYER)" --format mermaid --out "$(LAYERS_DIR)/layer_$(LAYER)/block.mmd"
 
 attention-diagram:
 	mkdir -p "$(DETAILS_DIR)/layer_$(LAYER)"
-	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --cache-dir "$(CACHE_DIR)" --level attention --layer "$(LAYER)" --format mermaid --out "$(DETAILS_DIR)/layer_$(LAYER)/attention.mmd"
+	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --revision "$(REVISION)" --cache-dir "$(CACHE_DIR)" --max-file-mb "$(MAX_FILE_MB)" --level attention --layer "$(LAYER)" --format mermaid --out "$(DETAILS_DIR)/layer_$(LAYER)/attention.mmd"
 
 mlp-diagram:
 	mkdir -p "$(DETAILS_DIR)/layer_$(LAYER)"
-	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --cache-dir "$(CACHE_DIR)" --level mlp --layer "$(LAYER)" --format mermaid --out "$(DETAILS_DIR)/layer_$(LAYER)/mlp.mmd"
+	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --revision "$(REVISION)" --cache-dir "$(CACHE_DIR)" --max-file-mb "$(MAX_FILE_MB)" --level mlp --layer "$(LAYER)" --format mermaid --out "$(DETAILS_DIR)/layer_$(LAYER)/mlp.mmd"
 
 moe-detail-diagram:
 	mkdir -p "$(DETAILS_DIR)/layer_$(MOE_LAYER)"
-	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --cache-dir "$(CACHE_DIR)" --level moe --layer "$(MOE_LAYER)" --format mermaid --out "$(DETAILS_DIR)/layer_$(MOE_LAYER)/moe.mmd"
+	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --revision "$(REVISION)" --cache-dir "$(CACHE_DIR)" --max-file-mb "$(MAX_FILE_MB)" --level moe --layer "$(MOE_LAYER)" --format mermaid --out "$(DETAILS_DIR)/layer_$(MOE_LAYER)/moe.mmd"
 
 detail-diagrams: attention-diagram mlp-diagram moe-detail-diagram
 
@@ -101,29 +111,35 @@ moe-layer-diagram:
 
 json:
 	mkdir -p "$(IR_DIR)"
-	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --cache-dir "$(CACHE_DIR)" --format json --out "$(IR_DIR)/architecture.json"
+	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --revision "$(REVISION)" --cache-dir "$(CACHE_DIR)" --max-file-mb "$(MAX_FILE_MB)" --format json --out "$(IR_DIR)/architecture.json"
 
 kernel-onnx:
 	mkdir -p "$(ONNX_DIR)/layer_$(LAYER)"
-	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --cache-dir "$(CACHE_DIR)" --level layer --layer "$(LAYER)" --format onnx --out "$(ONNX_DIR)/layer_$(LAYER)/kernels.onnx"
+	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --revision "$(REVISION)" --cache-dir "$(CACHE_DIR)" --max-file-mb "$(MAX_FILE_MB)" --level layer --layer "$(LAYER)" --format onnx --out "$(ONNX_DIR)/layer_$(LAYER)/kernels.onnx"
 
 moe-kernel-onnx:
 	mkdir -p "$(ONNX_DIR)/layer_$(MOE_LAYER)"
-	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --cache-dir "$(CACHE_DIR)" --level layer --layer "$(MOE_LAYER)" --format onnx --out "$(ONNX_DIR)/layer_$(MOE_LAYER)/kernels.onnx"
+	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --revision "$(REVISION)" --cache-dir "$(CACHE_DIR)" --max-file-mb "$(MAX_FILE_MB)" --level layer --layer "$(MOE_LAYER)" --format onnx --out "$(ONNX_DIR)/layer_$(MOE_LAYER)/kernels.onnx"
 
 attention-onnx:
 	mkdir -p "$(ONNX_DIR)/layer_$(LAYER)"
-	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --cache-dir "$(CACHE_DIR)" --level attention --layer "$(LAYER)" --format onnx --out "$(ONNX_DIR)/layer_$(LAYER)/attention.onnx"
+	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --revision "$(REVISION)" --cache-dir "$(CACHE_DIR)" --max-file-mb "$(MAX_FILE_MB)" --level attention --layer "$(LAYER)" --format onnx --out "$(ONNX_DIR)/layer_$(LAYER)/attention.onnx"
 
 mlp-onnx:
 	mkdir -p "$(ONNX_DIR)/layer_$(LAYER)"
-	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --cache-dir "$(CACHE_DIR)" --level mlp --layer "$(LAYER)" --format onnx --out "$(ONNX_DIR)/layer_$(LAYER)/mlp.onnx"
+	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --revision "$(REVISION)" --cache-dir "$(CACHE_DIR)" --max-file-mb "$(MAX_FILE_MB)" --level mlp --layer "$(LAYER)" --format onnx --out "$(ONNX_DIR)/layer_$(LAYER)/mlp.onnx"
 
 moe-onnx:
 	mkdir -p "$(ONNX_DIR)/layer_$(MOE_LAYER)"
-	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --cache-dir "$(CACHE_DIR)" --level moe --layer "$(MOE_LAYER)" --format onnx --out "$(ONNX_DIR)/layer_$(MOE_LAYER)/moe.onnx"
+	$(PYTHON) -m llm_analyzer arch "$(MODEL)" --revision "$(REVISION)" --cache-dir "$(CACHE_DIR)" --max-file-mb "$(MAX_FILE_MB)" --level moe --layer "$(MOE_LAYER)" --format onnx --out "$(ONNX_DIR)/layer_$(MOE_LAYER)/moe.onnx"
 
 onnx-graphs: kernel-onnx moe-kernel-onnx attention-onnx mlp-onnx moe-onnx
+
+analyze-list:
+	$(PYTHON) -m llm_analyzer batch "$(MODEL_LIST)" --revision "$(REVISION)" --cache-dir "$(CACHE_DIR)" --max-file-mb "$(MAX_FILE_MB)" --out-dir "$(OUT_DIR)"
+
+reproduce-evaluated:
+	$(MAKE) analyze-list MODEL_LIST="model_lists/evaluated_models.txt"
 
 arch: model-diagram layer-diagram json
 

@@ -81,13 +81,19 @@ make mlp-diagram LAYER=0
 make moe-detail-diagram MOE_LAYER=1
 make setup-onnx
 make onnx-graphs
+make analyze-list MODEL_LIST=model_lists/evaluated_models.txt
+make reproduce-evaluated
 ```
 
-By default, `make` uses:
+By default, `make` uses `.venv/bin/python` when a local virtual environment
+exists, otherwise `/usr/local/anaconda3/bin/python3.11`:
 
 ```text
-PYTHON=/usr/local/anaconda3/bin/python3.11
+PYTHON=.venv/bin/python
 MODEL=meta-llama/Llama-4-Maverick-17B-128E
+MODEL_LIST=model_lists/evaluated_models.txt
+REVISION=main
+MAX_FILE_MB=50.0
 LAYER=0
 MOE_LAYER=1
 OUT_DIR=outputs
@@ -141,7 +147,39 @@ llm-analyzer arch meta-llama/Llama-4-Maverick-17B-128E --level layer --layer 1 -
 
 # Save normalized architecture IR.
 llm-analyzer arch Qwen/Qwen2.5-7B-Instruct --format json --out outputs/Qwen_Qwen2.5-7B-Instruct/ir/architecture.json
+
+# Analyze a list of models and write the full selected output set.
+llm-analyzer batch model_lists/evaluated_models.txt --out-dir outputs
 ```
+
+## Batch Model Lists
+
+Use `make analyze-list` when the input is a file of model IDs instead of a
+single `MODEL` value:
+
+```bash
+make setup-onnx
+make analyze-list MODEL_LIST=model_lists/evaluated_models.txt
+```
+
+The included evaluated-model manifest can regenerate the checked-in output tree:
+
+```bash
+make reproduce-evaluated
+```
+
+The list format is pipe-delimited:
+
+```text
+model|layers|attention_layers|mlp_layers|moe_layers
+meta-llama/Llama-4-Maverick-17B-128E|0,1|0|0|1
+bigscience/bloom|0|0|0|
+```
+
+Layer lists are comma-separated. Empty fields are allowed, for example dense
+models leave `moe_layers` empty. The batch command writes `model.mmd`,
+`architecture.json`, layer block diagrams, attention/MLP/MoE detail diagrams,
+and ONNX kernel-flow graphs for the selected layers.
 
 The Makefile writes outputs in this hierarchy:
 
@@ -180,6 +218,10 @@ The repository includes generated metadata-only outputs for representative
 state-of-the-art open-source architectures. Each output directory contains a
 normalized JSON IR, Mermaid diagrams, and ONNX kernel-flow graphs for one or
 more representative layers.
+
+The manifest used to reproduce these outputs is
+`model_lists/evaluated_models.txt`; run `make reproduce-evaluated` after
+installing ONNX support.
 
 | Model | Detected architecture | Output directory |
 | --- | --- | --- |

@@ -1,7 +1,9 @@
 import json
+import tempfile
 import unittest
 from pathlib import Path
 
+from llm_analyzer.cli import _read_model_list
 from llm_analyzer.extract import extract_architecture_from_config
 from llm_analyzer.kernel_graph import build_kernel_graph
 from llm_analyzer.render import render_mermaid_attention, render_mermaid_mlp, render_mermaid_moe
@@ -170,6 +172,29 @@ class ExtractArchitectureTest(unittest.TestCase):
         self.assertEqual(attention.tensors["q_dense"].shape, ["batch", "sequence", 64, 192])
         self.assertEqual(attention.tensors["v_heads"].shape, ["batch", "sequence", 64, 128])
         self.assertEqual(moe.tensors["routed_gate"].shape, ["tokens", 8, 2048])
+
+    def test_batch_model_list_parser(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            model_list = Path(temp_dir) / "models.txt"
+            model_list.write_text(
+                "\n".join(
+                    [
+                        "# model|layers|attention_layers|mlp_layers|moe_layers",
+                        "meta-llama/Llama-4-Maverick-17B-128E|0,1|0|0|1",
+                        "bigscience/bloom|0|0|0|",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            plans = _read_model_list(model_list)
+
+        self.assertEqual([plan.model for plan in plans], ["meta-llama/Llama-4-Maverick-17B-128E", "bigscience/bloom"])
+        self.assertEqual(plans[0].layers, [0, 1])
+        self.assertEqual(plans[0].attention_layers, [0])
+        self.assertEqual(plans[0].mlp_layers, [0])
+        self.assertEqual(plans[0].moe_layers, [1])
+        self.assertEqual(plans[1].moe_layers, [])
 
 
 if __name__ == "__main__":
