@@ -183,8 +183,8 @@ def render_mermaid_layer(architecture: Architecture, layer_index: int = 0) -> st
         shared = names.get("shared_expert_gate/up/down_proj")
         if post_norm and shared:
             lines.append("  %s --> %s" % (post_norm, names["shared_expert_gate/up/down_proj"]))
-        lines.append("  %s --> %s" % (names["expert_gate/up/down_proj"], names["combine_experts"]))
         if shared:
+            lines.append("  %s --> %s" % (names["expert_gate/up/down_proj"], names["combine_experts"]))
             lines.append("  %s --> %s" % (shared, names["combine_experts"]))
 
     lines.insert(1, '  title["%s: %s"]' % (_escape(layer.name), _escape(layer.layer_type)))
@@ -202,6 +202,10 @@ def render_mermaid_attention(architecture: Architecture, layer_index: int = 0) -
         return _render_mermaid_kimi_mla(architecture, layer)
     if _component_details(layer, "glm_dsa_attention"):
         return _render_mermaid_glm_dsa(architecture, layer)
+    if _component_details(layer, "hy_v3_attention"):
+        return _render_mermaid_hy_v3_attention(architecture, layer)
+    if _component_details(layer, "mimo_v2_attention"):
+        return _render_mermaid_mimo_v2_attention(architecture, layer)
 
     summary = architecture.summary
     attention = architecture.text_decoder.get("attention", {})
@@ -486,6 +490,117 @@ def _render_mermaid_kimi_mla(architecture: Architecture, layer: Layer) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _render_mermaid_mimo_v2_attention(architecture: Architecture, layer: Layer) -> str:
+    attention = _component_details(layer, "mimo_v2_attention")
+    hidden_size = architecture.summary.get("hidden_size")
+    heads = attention.get("attention_heads")
+    kv_heads = attention.get("kv_heads")
+    head_dim = attention.get("head_dim")
+    v_head_dim = attention.get("v_head_dim")
+    projection_layout = str(attention.get("projection_layout") or "split")
+    lines = [
+        "flowchart TD",
+        '  title["%s MiMo V2 attention detail"]' % _escape(layer.name),
+        '  x["Layer input\\nhidden=%s"] --> norm["Input RMSNorm"]' % _value(hidden_size),
+    ]
+    if projection_layout == "fused_qkv":
+        lines.extend(
+            [
+                '  norm --> qkv["fused qkv_proj\\nhidden -> q+k+v = %s\\nlayout=%s"]'
+                % (_value(attention.get("qkv_size")), _value(projection_layout)),
+                '  qkv --> split["split Q/K/V\\nQ=%s K=%s V=%s"]'
+                % (_value(attention.get("q_size")), _value(attention.get("k_size")), _value(attention.get("v_size"))),
+                '  split --> q["Q reshape\\n[B,T,%s,%s]"]' % (_value(heads), _value(head_dim)),
+                '  split --> k["K reshape\\n[B,T,%s,%s]"]' % (_value(kv_heads), _value(head_dim)),
+                '  split --> v["V reshape\\n[B,T,%s,%s]"]' % (_value(kv_heads), _value(v_head_dim)),
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                '  norm --> qproj["q_proj\\nhidden -> Q=%s"]' % _value(attention.get("q_size")),
+                '  norm --> kproj["k_proj\\nhidden -> K=%s"]' % _value(attention.get("k_size")),
+                '  norm --> vproj["v_proj\\nhidden -> V=%s"]' % _value(attention.get("v_size")),
+                '  qproj --> q["Q reshape\\n[B,T,%s,%s]"]' % (_value(heads), _value(head_dim)),
+                '  kproj --> k["K reshape\\n[B,T,%s,%s]"]' % (_value(kv_heads), _value(head_dim)),
+                '  vproj --> v["V reshape\\n[B,T,%s,%s]"]' % (_value(kv_heads), _value(v_head_dim)),
+            ]
+        )
+    lines.extend(
+        [
+            '  v --> vscale["value scale\\nalpha=%s"]' % _value(attention.get("attention_value_scale")),
+            '  q --> qrope["partial RoPE on first %s dims\\ntheta=%s"]'
+            % (_value(attention.get("rope_dim")), _value(attention.get("rope_theta"))),
+            '  k --> krope["partial RoPE on first %s dims"]' % _value(attention.get("rope_dim")),
+            '  krope --> kcache["%s cache update"]' % ("sliding-window ring" if attention.get("sliding_window") else "KV"),
+            '  vscale --> vcache["%s cache update"]' % ("sliding-window ring" if attention.get("sliding_window") else "KV"),
+            '  kcache --> repeatk["repeat K heads\\nkv groups=%s"]' % _value(attention.get("kv_groups")),
+            '  vcache --> repeatv["repeat V heads\\nkv groups=%s"]' % _value(attention.get("kv_groups")),
+            '  qrope --> score["scores = Q K^T / sqrt(%s)"]' % _value(head_dim),
+            '  repeatk --> score',
+            '  score --> mask["causal%s mask"]'
+            % (
+                " + sliding-window=%s" % _value(attention.get("sliding_window"))
+                if attention.get("sliding_window")
+                else ""
+            ),
+        ]
+    )
+    if attention.get("attention_sink_bias"):
+        lines.append('  mask --> sink["attention sink bias\\nper-head learned sink logit"]')
+        softmax_input = "sink"
+    else:
+        softmax_input = "mask"
+    lines.extend(
+        [
+            '  %s --> softmax["softmax over key positions"]' % softmax_input,
+            '  softmax --> pv["context = P V"]',
+            '  repeatv --> pv',
+            '  pv --> merge["merge heads\\n[B,T,%s]"]' % _value(attention.get("o_hidden_size")),
+            '  merge --> out["o_proj\\n%s -> hidden"]' % _value(attention.get("o_hidden_size")),
+            '  out --> residual["residual add"]',
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
+def _render_mermaid_hy_v3_attention(architecture: Architecture, layer: Layer) -> str:
+    attention = _component_details(layer, "hy_v3_attention")
+    hidden_size = architecture.summary.get("hidden_size")
+    heads = attention.get("attention_heads")
+    kv_heads = attention.get("kv_heads")
+    head_dim = attention.get("head_dim")
+    lines = [
+        "flowchart TD",
+        '  title["%s Hy3 attention detail"]' % _escape(layer.name),
+        '  x["Layer input\\nhidden=%s"] --> norm["Input RMSNorm"]' % _value(hidden_size),
+        '  norm --> qproj["q_proj\\nhidden -> Q=%s"]' % _value(attention.get("q_size")),
+        '  norm --> kproj["k_proj\\nhidden -> K=%s"]' % _value(attention.get("k_size")),
+        '  norm --> vproj["v_proj\\nhidden -> V=%s"]' % _value(attention.get("v_size")),
+        '  qproj --> q["Q reshape\\n[B,T,%s,%s]"]' % (_value(heads), _value(head_dim)),
+        '  kproj --> k["K reshape\\n[B,T,%s,%s]"]' % (_value(kv_heads), _value(head_dim)),
+        '  vproj --> v["V reshape\\n[B,T,%s,%s]"]' % (_value(kv_heads), _value(head_dim)),
+        '  q --> qnorm["q_norm RMSNorm\\nper head dim=%s"]' % _value(head_dim),
+        '  k --> knorm["k_norm RMSNorm\\nper head dim=%s"]' % _value(head_dim),
+        '  qnorm --> qrope["RoPE\\ntheta=%s"]' % _value(attention.get("rope_theta")),
+        '  knorm --> krope["RoPE\\ntheta=%s"]' % _value(attention.get("rope_theta")),
+        '  krope --> kcache["KV cache update"]',
+        '  v --> vcache["KV cache update"]',
+        '  kcache --> repeatk["repeat K heads\\nkv groups=%s"]' % _value(attention.get("kv_groups")),
+        '  vcache --> repeatv["repeat V heads\\nkv groups=%s"]' % _value(attention.get("kv_groups")),
+        '  qrope --> score["scores = Q K^T / sqrt(%s)"]' % _value(head_dim),
+        '  repeatk --> score',
+        '  score --> mask["causal mask"]',
+        '  mask --> softmax["softmax over key positions\\naccumulator=float32"]',
+        '  softmax --> pv["context = P V"]',
+        '  repeatv --> pv',
+        '  pv --> merge["merge heads\\n[B,T,%s]"]' % _value(attention.get("o_hidden_size")),
+        '  merge --> out["o_proj\\n%s -> hidden"]' % _value(attention.get("o_hidden_size")),
+        '  out --> residual["residual add"]',
+    ]
+    return "\n".join(lines) + "\n"
+
+
 def render_mermaid_mlp(architecture: Architecture, layer_index: int = 0) -> str:
     layer = _get_layer(architecture, layer_index)
     hidden_size = architecture.summary.get("hidden_size")
@@ -567,6 +682,14 @@ def render_mermaid_moe(architecture: Architecture, layer_index: int = 0) -> str:
     topk_label = "top-k select\\nk=%s" % _value(router.get("activated_experts"))
     if router.get("hash_routing"):
         topk_label = "hash tid2eid lookup\\nk=%s" % _value(router.get("activated_experts"))
+    elif router.get("topk_method") == "noaux_tc" and router.get("n_group") is not None:
+        topk_label = "noaux_tc group top-k\\ngroups=%s topk_group=%s k=%s" % (
+            _value(router.get("n_group")),
+            _value(router.get("topk_group")),
+            _value(router.get("activated_experts")),
+        )
+    elif router.get("score_correction_bias"):
+        topk_label = "bias-corrected top-k\\nk=%s" % _value(router.get("activated_experts"))
 
     input_label = "Post-attention hidden states"
     output_label = "residual add"
@@ -602,7 +725,11 @@ def render_mermaid_moe(architecture: Architecture, layer_index: int = 0) -> str:
         )
         lines.insert(-3, '  shared --> add')
     else:
-        lines[9] = '  experts --> add["routed expert weighted sum"]'
+        lines = [
+            '  experts --> add["routed expert weighted sum"]' if line.startswith("  experts --> reduce") else line
+            for line in lines
+            if not line.startswith("  reduce --> add")
+        ]
     if router.get("router_aux_loss_coef") is not None:
         lines.append('  router -.-> aux["router aux loss coef=%s"]' % router.get("router_aux_loss_coef"))
     return "\n".join(lines) + "\n"

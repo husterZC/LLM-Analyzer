@@ -342,6 +342,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -450,6 +451,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -558,6 +560,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -666,6 +669,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -774,6 +778,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -882,6 +887,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -990,6 +996,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -1098,6 +1105,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -1206,6 +1214,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -1314,6 +1323,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -1422,6 +1432,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -1530,6 +1541,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -1638,6 +1650,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -1746,6 +1759,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -1854,6 +1868,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -1962,6 +1977,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -2070,6 +2086,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -2178,6 +2195,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -2286,6 +2304,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -2394,6 +2413,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -2502,6 +2522,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -2610,6 +2631,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -2718,6 +2740,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -2826,6 +2849,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -2934,6 +2958,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -3042,6 +3067,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -3150,6 +3176,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -3258,6 +3285,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -3366,6 +3394,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -3474,6 +3503,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -3582,6 +3612,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -3690,6 +3721,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -3798,6 +3830,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -3906,6 +3939,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -4014,6 +4048,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -4122,6 +4157,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -4230,6 +4266,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -4338,6 +4375,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -4446,6 +4484,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -4554,6 +4593,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -4662,6 +4702,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -4770,6 +4811,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -4878,6 +4920,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -4986,6 +5029,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -5094,6 +5138,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -5202,6 +5247,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -5310,6 +5356,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -5418,6 +5465,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -5526,6 +5574,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -5634,6 +5683,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -5742,6 +5792,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -5850,6 +5901,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -5958,6 +6010,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -6066,6 +6119,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -6174,6 +6228,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -6282,6 +6337,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -6390,6 +6446,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -6498,6 +6555,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -6606,6 +6664,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -6714,6 +6773,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -6822,6 +6882,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -6930,6 +6991,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -7038,6 +7100,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -7146,6 +7209,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -7254,6 +7318,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -7362,6 +7427,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -7470,6 +7536,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -7578,6 +7645,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -7686,6 +7754,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -7794,6 +7863,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -7902,6 +7972,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -8010,6 +8081,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -8118,6 +8190,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -8226,6 +8299,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -8334,6 +8408,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 2048,
             "type": "shared_dense"
           },
@@ -8668,6 +8743,7 @@
       "activated_experts": 8,
       "dense_mlp_layers": 3,
       "enabled": true,
+      "expert_dtype": "bfloat16",
       "experts": 256,
       "moe_layers": 75,
       "scoring_func": "sigmoid",

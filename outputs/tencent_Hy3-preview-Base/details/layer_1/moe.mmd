@@ -1,0 +1,14 @@
+flowchart TD
+  title["layers.1 MoE routing detail"]
+  x["Post-attention hidden states\n[B,T,4096]"] --> flat["flatten tokens\n[B*T,hidden]"]
+  flat --> router["router linear\nhidden -> 192 experts"]
+  router --> topk["bias-corrected top-k\nk=8"]
+  topk --> score["sigmoid / normalize / scale=2.826"]
+  score --> dispatch["dispatch or scale token copies"]
+  dispatch --> experts["routed expert MLPs\nexperts=192\nintermediate=1536\nactivation=silu\ndtype=bfloat16"]
+  experts --> reduce["sum routed expert outputs"]
+  flat --> shared["shared expert MLP\nintermediate=1536\nactivation=silu"]
+  shared --> add
+  reduce --> add["add routed + shared"]
+  add --> output["reshape to [B,T,hidden]"]
+  output --> residual["residual add"]

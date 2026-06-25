@@ -5,11 +5,11 @@ flowchart TD
   router --> topk["top-k select\nk=1"]
   topk --> score["sigmoid / routing weights"]
   score --> dispatch["dispatch or scale token copies"]
-  dispatch --> experts["routed expert MLPs\nexperts=128\nintermediate=8192\nactivation=silu"]
+  dispatch --> experts["routed expert MLPs\nexperts=128\nintermediate=8192\nactivation=silu\ndtype=bfloat16"]
   experts --> reduce["sum routed expert outputs"]
   flat --> shared["shared expert MLP\nintermediate=8192\nactivation=silu"]
-  reduce --> add["add routed + shared"]
   shared --> add
+  reduce --> add["add routed + shared"]
   add --> output["reshape to [B,T,hidden]"]
   output --> residual["residual add"]
   router -.-> aux["router aux loss coef=0.001"]

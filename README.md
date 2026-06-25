@@ -235,6 +235,9 @@ installing ONNX support.
 | `Qwen/Qwen3.5-122B-A10B` | Qwen3.5 multimodal MoE, 256 routed experts top-8 | `outputs/Qwen_Qwen3.5-122B-A10B/` |
 | `Qwen/Qwen3.5-397B-A17B` | Qwen3.5 multimodal MoE, 512 routed experts top-10 | `outputs/Qwen_Qwen3.5-397B-A17B/` |
 | `zai-org/GLM-5` | GLM MoE DSA/MLA with dense prefix layers and MoE layers | `outputs/zai-org_GLM-5/` |
+| `XiaomiMiMo/MiMo-V2.5-Base` | MiMo V2 omnimodal MoE with hybrid full/SWA fused-QKV attention | `outputs/XiaomiMiMo_MiMo-V2.5-Base/` |
+| `XiaomiMiMo/MiMo-V2-Flash` | MiMo V2 text MoE with hybrid full/SWA split-QKV attention | `outputs/XiaomiMiMo_MiMo-V2-Flash/` |
+| `tencent/Hy3-preview-Base` | Hy3 MoE with Q/K RMSNorm GQA, sigmoid-bias router, shared MLP, and MTP | `outputs/tencent_Hy3-preview-Base/` |
 
 Recent model-specific lowering includes:
 
@@ -244,6 +247,8 @@ Recent model-specific lowering includes:
 - Kimi K2.5: DeepSeek-V3-style q-LoRA/compressed-KV MLA and int4-packed routed experts.
 - GLM-5/5.2: MLA-style projections, dynamic sparse attention, IndexShare, and MoE router correction bias.
 - DeepSeek V4: Hyper-Connection blocks, sparse MLA compression/indexing, hash-routed early layers, and FP4 expert kernels.
+- MiMo V2/2.5: fused or split QKV GQA, partial RoPE, full/sliding-window hybrid attention, attention sink bias, value scaling, and noaux_tc sigmoid MoE routing.
+- Hy3 preview: split-QKV GQA with per-head Q/K RMSNorm, RoPE, sigmoid correction-bias top-k routing, routed expert SwiGLU, shared SwiGLU MLP, and MTP metadata.
 
 ## Local Cache
 

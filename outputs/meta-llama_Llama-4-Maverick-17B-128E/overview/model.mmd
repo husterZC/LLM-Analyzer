@@ -1,5 +1,5 @@
 flowchart TD
-  image["Image input"] --> vision["Vision encoder\n34 layers\nhidden=1408"]
+  image["Image input"] --> vision["Vision encoder\n34 layers\nhidden=1408\npatch=14"]
   vision --> fusion["Multimodal projection / early fusion"]
   tokens["Text token IDs"] --> embed["Token embedding\nvocab=202048\nhidden=5120"]
   fusion --> decoder_input

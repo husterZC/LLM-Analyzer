@@ -10,7 +10,7 @@ flowchart TD
   n6["ffn_norm\nRMSNorm"]
   n7["router\nMoE router\nactivated_experts=6\nexperts=384\nhash_routing=False\nnorm_topk_prob=True\nnum_hash_layers=3\nroute_scale=2.5\nscoring_func=sqrtsoftplus\nshared_experts=1\ntopk_method=noaux_tc"]
   n8["expert_gate/up/down_proj\nrouted FP4 expert SwiGLU\nactivated_experts=6\nactivation=silu\nexpert_dtype=fp4\nexperts=384\nintermediate_size=3072\nmoe_intermediate_size=3072\nnorm_topk_prob=True\nroute_scale=2.5\nscoring_func=sqrtsoftplus\nswiglu_limit=10.0\ntopk_method=noaux_tc\ntype=MoE"]
-  n9["shared_expert_gate/up/down_proj\nshared expert SwiGLU\nactivation=silu\nintermediate_size=3072\nswiglu_limit=10.0\ntype=shared_dense"]
+  n9["shared_expert_gate/up/down_proj\nshared expert SwiGLU\nactivation=silu\nexperts=1\nintermediate_size=3072\nswiglu_limit=10.0\ntype=shared_dense"]
   n10["combine_experts\nMoE combine"]
   n11["hc_ffn_post\nHyperConnectionPost\nhc_eps=1e-06\nhc_mult=4\nhc_sinkhorn_iters=20"]
   n0 --> n1

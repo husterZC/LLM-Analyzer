@@ -196,6 +196,124 @@ class ExtractArchitectureTest(unittest.TestCase):
         self.assertEqual(plans[0].moe_layers, [1])
         self.assertEqual(plans[1].moe_layers, [])
 
+    def test_mimo_v2_hybrid_attention_and_noaux_moe_graphs(self):
+        fixture = Path(__file__).parent / "fixtures" / "mimo_v2_config.json"
+        config = json.loads(fixture.read_text(encoding="utf-8"))
+        arch = extract_architecture_from_config(config, "XiaomiMiMo/MiMo-V2.5-Base")
+
+        self.assertEqual(arch.model_type, "mimo_v2")
+        self.assertEqual(arch.text_decoder["layer_type"], "MiMoV2DecoderLayer")
+        self.assertEqual(arch.text_decoder["norm"], "RMSNorm")
+        self.assertEqual(arch.summary["modalities"], ["text", "image", "audio", "video"])
+        self.assertEqual(arch.summary["moe"]["moe_layers"], 2)
+        self.assertEqual(arch.summary["moe"]["dense_mlp_layers"], 1)
+        self.assertEqual(arch.summary["moe"]["expert_dtype"], "fp8-e4m3")
+        self.assertEqual(arch.layers[0].layer_type, "MiMoV2DecoderLayer[DenseMLP]")
+        self.assertEqual(arch.layers[1].layer_type, "MiMoV2DecoderLayer[MoE]")
+        self.assertEqual(arch.layers[0].components[2].details["type"], "full_attention")
+        self.assertEqual(arch.layers[1].components[2].details["type"], "sliding_window_attention")
+        self.assertEqual(arch.layers[1].components[2].details["kv_heads"], 8)
+        self.assertEqual(arch.layers[1].components[2].details["rope_dim"], 64)
+        self.assertEqual(arch.layers[1].components[5].details["topk_method"], "noaux_tc")
+
+        full_attention = build_kernel_graph(arch, "attention", 0)
+        swa_attention = build_kernel_graph(arch, "attention", 1)
+        moe = build_kernel_graph(arch, "moe", 1)
+        attention_diagram = render_mermaid_attention(arch, 1)
+
+        full_ops = [node.op_type for node in full_attention.nodes]
+        swa_ops = [node.op_type for node in swa_attention.nodes]
+        moe_ops = [node.op_type for node in moe.nodes]
+
+        self.assertIn("SplitQKV", full_ops)
+        self.assertIn("PartialRoPE", full_ops)
+        self.assertIn("ValueScale", full_ops)
+        self.assertIn("RingKVCacheUpdate", swa_ops)
+        self.assertIn("AttentionSinkBias", swa_ops)
+        self.assertIn("GroupTopK", moe_ops)
+        self.assertIn("MaskedTopK", moe_ops)
+        self.assertIn("ExpertReduce", moe_ops)
+        self.assertIn("partial RoPE", attention_diagram)
+        self.assertEqual(swa_attention.tensors["q_heads"].shape, ["batch", "sequence", 64, 192])
+        self.assertEqual(swa_attention.tensors["v_heads"].shape, ["batch", "sequence", 8, 128])
+        self.assertEqual(moe.tensors["routed_gate"].shape, ["tokens", 8, 2048])
+
+    def test_mimo_v2_flash_split_attention_graphs(self):
+        fixture = Path(__file__).parent / "fixtures" / "mimo_v2_flash_config.json"
+        config = json.loads(fixture.read_text(encoding="utf-8"))
+        arch = extract_architecture_from_config(config, "XiaomiMiMo/MiMo-V2-Flash")
+
+        self.assertEqual(arch.model_type, "mimo_v2_flash")
+        self.assertEqual(arch.architectures, ["MiMoV2FlashForCausalLM"])
+        self.assertEqual(arch.summary["modalities"], ["text"])
+        self.assertEqual(arch.summary["moe"]["moe_layers"], 2)
+        self.assertEqual(arch.layers[0].layer_type, "MiMoV2DecoderLayer[DenseMLP]")
+        self.assertEqual(arch.layers[1].layer_type, "MiMoV2DecoderLayer[MoE]")
+        self.assertEqual(arch.layers[0].components[2].details["projection_layout"], "split")
+        self.assertEqual(arch.layers[1].components[2].details["type"], "sliding_window_attention")
+        self.assertEqual(arch.layers[1].components[2].details["kv_heads"], 8)
+
+        swa_attention = build_kernel_graph(arch, "attention", 1)
+        attention_diagram = render_mermaid_attention(arch, 1)
+        ops = [node.op_type for node in swa_attention.nodes]
+        linear_names = [node.name for node in swa_attention.nodes if node.op_type == "Linear"]
+
+        self.assertNotIn("SplitQKV", ops)
+        self.assertIn("q_proj", linear_names)
+        self.assertIn("k_proj", linear_names)
+        self.assertIn("v_proj", linear_names)
+        self.assertIn("PartialRoPE", ops)
+        self.assertIn("ValueScale", ops)
+        self.assertIn("RingKVCacheUpdate", ops)
+        self.assertIn("AttentionSinkBias", ops)
+        self.assertIn("q_proj", attention_diagram)
+        self.assertNotIn("fused qkv_proj", attention_diagram)
+        self.assertEqual(swa_attention.tensors["q_proj_out"].shape, ["batch", "sequence", 12288])
+        self.assertEqual(swa_attention.tensors["k_proj_out"].shape, ["batch", "sequence", 1536])
+        self.assertEqual(swa_attention.tensors["v_proj_out"].shape, ["batch", "sequence", 1024])
+
+    def test_hy3_qk_norm_attention_and_sigmoid_bias_moe_graphs(self):
+        fixture = Path(__file__).parent / "fixtures" / "hy3_config.json"
+        config = json.loads(fixture.read_text(encoding="utf-8"))
+        arch = extract_architecture_from_config(config, "tencent/Hy3-preview-Base")
+
+        self.assertEqual(arch.model_type, "hy_v3")
+        self.assertEqual(arch.text_decoder["layer_type"], "HYV3DecoderLayer")
+        self.assertEqual(arch.summary["moe"]["moe_layers"], 3)
+        self.assertEqual(arch.summary["moe"]["dense_mlp_layers"], 1)
+        self.assertEqual(arch.summary["mtp"]["nextn_predict_layers"], 1)
+        self.assertEqual(arch.layers[0].layer_type, "HYV3DecoderLayer[DenseMLP]")
+        self.assertEqual(arch.layers[1].layer_type, "HYV3DecoderLayer[MoE]")
+        self.assertEqual(arch.layers[1].components[2].details["qk_norm"], True)
+        self.assertEqual(arch.layers[1].components[2].details["q_size"], 8192)
+        self.assertEqual(arch.layers[1].components[2].details["k_size"], 1024)
+        self.assertEqual(arch.layers[1].components[5].details["topk_method"], "sigmoid_bias_topk")
+        self.assertEqual(arch.layers[1].components[5].details["route_scale"], 2.826)
+        self.assertEqual(arch.layers[1].components[7].details["intermediate_size"], 1536)
+
+        attention = build_kernel_graph(arch, "attention", 1)
+        moe = build_kernel_graph(arch, "moe", 1)
+        attention_diagram = render_mermaid_attention(arch, 1)
+        moe_diagram = render_mermaid_moe(arch, 1)
+
+        attention_names = [node.name for node in attention.nodes]
+        attention_ops = [node.op_type for node in attention.nodes]
+        moe_ops = [node.op_type for node in moe.nodes]
+
+        self.assertIn("q_norm", attention_names)
+        self.assertIn("k_norm", attention_names)
+        self.assertIn("RoPE", attention_ops)
+        self.assertIn("RepeatKV", attention_ops)
+        self.assertIn("RouterBiasAdd", moe_ops)
+        self.assertIn("GatherRouterScores", moe_ops)
+        self.assertIn("RouterNormalizeScale", moe_ops)
+        self.assertIn("ExpertReduce", moe_ops)
+        self.assertIn("Add", moe_ops)
+        self.assertIn("q_norm RMSNorm", attention_diagram)
+        self.assertIn("bias-corrected top-k", moe_diagram)
+        self.assertEqual(attention.tensors["q_norm"].shape, ["batch", "sequence", 64, 128])
+        self.assertEqual(moe.tensors["shared_gate"].shape, ["tokens", 1536])
+
 
 if __name__ == "__main__":
     unittest.main()

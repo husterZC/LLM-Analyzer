@@ -1,0 +1,20 @@
+flowchart TD
+  title["layers.0: HYV3DecoderLayer[DenseMLP]"]
+  title -.-> n0
+  n0["input\nactivation"]
+  n1["input_layernorm\nRMSNorm"]
+  n2["hy_v3_attention\nHy3 GQA with Q/K RMSNorm\nattention_heads=64\nenable_attention_fp32_softmax=False\nfp32_softmax=True\nhead_dim=128\nk_norm=HYV3RMSNorm\nk_size=1024\nkv_groups=8\nkv_heads=8\nlayer_index=0\no_hidden_size=8192\nq_norm=HYV3RMSNorm\nq_size=8192\nqk_norm=True\nrope_theta=11158840.0\nrope_type=default\ntype=gqa\nv_size=1024"]
+  n3["residual_add_0\nresidual"]
+  n4["post_attention_layernorm\nRMSNorm"]
+  n5["gate_proj/up_proj\nprojection\nintermediate_size=13312"]
+  n6["activation\nsilu"]
+  n7["down_proj\nprojection"]
+  n8["residual_add_1\nresidual"]
+  n0 --> n1
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6
+  n6 --> n7
+  n7 --> n8

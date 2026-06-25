@@ -157,7 +157,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -166,6 +167,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -176,6 +178,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -336,7 +339,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -345,6 +349,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -355,6 +360,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -515,7 +521,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -524,6 +531,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -534,6 +542,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -694,7 +703,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -703,6 +713,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -713,6 +724,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -873,7 +885,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -882,6 +895,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -892,6 +906,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -1052,7 +1067,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -1061,6 +1077,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -1071,6 +1088,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -1231,7 +1249,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -1240,6 +1259,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -1250,6 +1270,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -1410,7 +1431,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -1419,6 +1441,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -1429,6 +1452,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -1589,7 +1613,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -1598,6 +1623,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -1608,6 +1634,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -1768,7 +1795,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -1777,6 +1805,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -1787,6 +1816,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -1947,7 +1977,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -1956,6 +1987,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -1966,6 +1998,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -2126,7 +2159,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -2135,6 +2169,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -2145,6 +2180,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -2305,7 +2341,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -2314,6 +2351,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -2324,6 +2362,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -2484,7 +2523,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -2493,6 +2533,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -2503,6 +2544,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -2663,7 +2705,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -2672,6 +2715,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -2682,6 +2726,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -2842,7 +2887,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -2851,6 +2897,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -2861,6 +2908,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -3021,7 +3069,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -3030,6 +3079,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -3040,6 +3090,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -3200,7 +3251,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -3209,6 +3261,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -3219,6 +3272,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -3379,7 +3433,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -3388,6 +3443,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -3398,6 +3454,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -3558,7 +3615,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -3567,6 +3625,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -3577,6 +3636,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -3737,7 +3797,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -3746,6 +3807,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -3756,6 +3818,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -3916,7 +3979,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -3925,6 +3989,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -3935,6 +4000,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -4095,7 +4161,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -4104,6 +4171,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -4114,6 +4182,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -4274,7 +4343,8 @@
           "details": {
             "activated_experts": 1,
             "experts": 128,
-            "router_aux_loss_coef": 0.001
+            "router_aux_loss_coef": 0.001,
+            "shared_experts": 1
           },
           "kind": "MoE router",
           "name": "router"
@@ -4283,6 +4353,7 @@
           "details": {
             "activated_experts": 1,
             "activation": "silu",
+            "expert_dtype": "bfloat16",
             "experts": 128,
             "intermediate_size": 8192,
             "type": "MoE"
@@ -4293,6 +4364,7 @@
         {
           "details": {
             "activation": "silu",
+            "experts": 1,
             "intermediate_size": 8192,
             "type": "shared_dense"
           },
@@ -4400,6 +4472,7 @@
       "activated_experts": 1,
       "dense_mlp_layers": 24,
       "enabled": true,
+      "expert_dtype": "bfloat16",
       "experts": 128,
       "interleave_moe_layer_step": 2,
       "moe_layers": 24
@@ -4420,6 +4493,8 @@
       "head_dim": 128,
       "heads": 40,
       "kv_heads": 8,
+      "qk_head_dim": 128,
+      "type": "MHA/GQA",
       "use_qk_norm": false
     },
     "dense_mlp_layers": [
@@ -4453,6 +4528,7 @@
     "mlp": {
       "activated_experts": 1,
       "activation": "silu",
+      "expert_dtype": "bfloat16",
       "experts": 128,
       "intermediate_size": 8192,
       "type": "MoE"

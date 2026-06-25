@@ -340,6 +340,10 @@ def _build_attention_core(
         return _build_kimi_mla_core(builder, architecture, layer, input_name)
     if _has_glm_dsa(layer):
         return _build_glm_dsa_core(builder, architecture, layer, input_name)
+    if _has_hy_v3_attention(layer):
+        return _build_hy_v3_attention_core(builder, architecture, layer, input_name)
+    if _has_mimo_v2_attention(layer):
+        return _build_mimo_v2_attention_core(builder, architecture, layer, input_name)
 
     summary = architecture.summary
     attention = architecture.text_decoder.get("attention", {})
@@ -529,6 +533,483 @@ def _build_attention_core(
         out_features=hidden_size,
         logical_weight="o_proj.weight",
     )
+
+
+def _build_hy_v3_attention_core(
+    builder: KernelGraphBuilder,
+    architecture: Architecture,
+    layer: Layer,
+    input_name: str,
+) -> str:
+    hidden_size = architecture.summary.get("hidden_size")
+    attention = _component_details(layer, "hy_v3_attention")
+    heads = attention.get("attention_heads") or architecture.summary.get("attention_heads")
+    kv_heads = attention.get("kv_heads") or architecture.summary.get("kv_heads") or heads
+    head_dim = attention.get("head_dim") or architecture.text_decoder.get("attention", {}).get("head_dim")
+    q_size = attention.get("q_size") or _product(heads, head_dim)
+    k_size = attention.get("k_size") or _product(kv_heads, head_dim)
+    v_size = attention.get("v_size") or _product(kv_heads, head_dim)
+
+    q_shape = ["batch", "sequence", heads or "heads", head_dim or "head_dim"]
+    kv_shape = ["batch", "sequence", kv_heads or "kv_heads", head_dim or "head_dim"]
+    repeated_shape = ["batch", "kv_sequence", heads or "heads", head_dim or "head_dim"]
+
+    q = builder.node(
+        "q_proj",
+        "Linear",
+        [input_name],
+        ["q_proj_out"],
+        output_shapes=[["batch", "sequence", q_size or "heads*head_dim"]],
+        output_descriptions=["Hy3 packed query projection before per-head reshape."],
+        in_features=hidden_size,
+        out_features=q_size,
+        logical_weight="self_attn.q_proj.weight",
+    )
+    k = builder.node(
+        "k_proj",
+        "Linear",
+        [input_name],
+        ["k_proj_out"],
+        output_shapes=[["batch", "sequence", k_size or "kv_heads*head_dim"]],
+        output_descriptions=["Hy3 packed key projection before per-head reshape."],
+        in_features=hidden_size,
+        out_features=k_size,
+        logical_weight="self_attn.k_proj.weight",
+    )
+    v = builder.node(
+        "v_proj",
+        "Linear",
+        [input_name],
+        ["v_proj_out"],
+        output_shapes=[["batch", "sequence", v_size or "kv_heads*head_dim"]],
+        output_descriptions=["Hy3 packed value projection before per-head reshape."],
+        in_features=hidden_size,
+        out_features=v_size,
+        logical_weight="self_attn.v_proj.weight",
+    )
+    q_heads = builder.node(
+        "reshape_q",
+        "ReshapeHeads",
+        [q],
+        ["q_heads"],
+        output_shapes=[q_shape],
+        heads=heads,
+        head_dim=head_dim,
+    )
+    k_heads = builder.node(
+        "reshape_k",
+        "ReshapeHeads",
+        [k],
+        ["k_heads"],
+        output_shapes=[kv_shape],
+        heads=kv_heads,
+        head_dim=head_dim,
+    )
+    v_heads = builder.node(
+        "reshape_v",
+        "ReshapeHeads",
+        [v],
+        ["v_heads"],
+        output_shapes=[kv_shape],
+        heads=kv_heads,
+        head_dim=head_dim,
+    )
+    q_norm = builder.node(
+        "q_norm",
+        "RMSNorm",
+        [q_heads],
+        ["q_norm"],
+        output_shapes=[q_shape],
+        logical_weight="self_attn.q_norm.weight",
+        eps=architecture.text_decoder.get("norm_eps"),
+    )
+    k_norm = builder.node(
+        "k_norm",
+        "RMSNorm",
+        [k_heads],
+        ["k_norm"],
+        output_shapes=[kv_shape],
+        logical_weight="self_attn.k_norm.weight",
+        eps=architecture.text_decoder.get("norm_eps"),
+    )
+    q_pos = builder.node(
+        "apply_rope_q",
+        "RoPE",
+        [q_norm],
+        ["q_rope"],
+        output_shapes=[q_shape],
+        theta=attention.get("rope_theta"),
+        rope_type=attention.get("rope_type"),
+    )
+    k_pos = builder.node(
+        "apply_rope_k",
+        "RoPE",
+        [k_norm],
+        ["k_rope"],
+        output_shapes=[kv_shape],
+        theta=attention.get("rope_theta"),
+        rope_type=attention.get("rope_type"),
+    )
+    cache_k = builder.node("kv_cache_update_k", "KVCacheUpdate", [k_pos], ["k_cache"], output_shapes=[["batch", "kv_sequence", kv_heads or "kv_heads", head_dim or "head_dim"]])
+    cache_v = builder.node("kv_cache_update_v", "KVCacheUpdate", [v_heads], ["v_cache"], output_shapes=[["batch", "kv_sequence", kv_heads or "kv_heads", head_dim or "head_dim"]])
+    repeated_k = builder.node(
+        "repeat_k",
+        "RepeatKV",
+        [cache_k],
+        ["k_repeated"],
+        output_shapes=[repeated_shape],
+        groups=_kv_groups(heads, kv_heads),
+    )
+    repeated_v = builder.node(
+        "repeat_v",
+        "RepeatKV",
+        [cache_v],
+        ["v_repeated"],
+        output_shapes=repeated_shape and [repeated_shape],
+        groups=_kv_groups(heads, kv_heads),
+    )
+    scores = builder.node(
+        "attention_scores",
+        "MatMulQK",
+        [q_pos, repeated_k],
+        ["attention_scores"],
+        output_shapes=[["batch", heads or "heads", "sequence", "kv_sequence"]],
+        scale="1/sqrt(%s)" % (head_dim or "head_dim"),
+    )
+    masked = builder.node(
+        "causal_mask",
+        "CausalMask",
+        [scores],
+        ["masked_scores"],
+        output_shapes=[["batch", heads or "heads", "sequence", "kv_sequence"]],
+    )
+    probs = builder.node(
+        "softmax_fp32",
+        "Softmax",
+        [masked],
+        ["attention_probs"],
+        output_shapes=[["batch", heads or "heads", "sequence", "kv_sequence"]],
+        axis=-1,
+        accumulator_dtype="float32",
+        output_dtype="query_dtype",
+    )
+    dropped = builder.node(
+        "attention_dropout",
+        "Dropout",
+        [probs],
+        ["attention_probs_dropout"],
+        output_shapes=[["batch", heads or "heads", "sequence", "kv_sequence"]],
+        ratio=attention.get("attention_dropout"),
+    )
+    context = builder.node(
+        "attention_context",
+        "MatMulPV",
+        [dropped, repeated_v],
+        ["attention_context"],
+        output_shapes=[["batch", "sequence", heads or "heads", head_dim or "head_dim"]],
+    )
+    merged = builder.node(
+        "merge_heads",
+        "MergeHeads",
+        [context],
+        ["attention_merged"],
+        output_shapes=[["batch", "sequence", q_size or "heads*head_dim"]],
+        hidden_size=q_size,
+    )
+    return builder.node(
+        "o_proj",
+        "Linear",
+        [merged],
+        ["attention_output"],
+        output_shapes=[["batch", "sequence", hidden_size or "hidden"]],
+        in_features=q_size,
+        out_features=hidden_size,
+        logical_weight="self_attn.o_proj.weight",
+    )
+
+
+def _build_mimo_v2_attention_core(
+    builder: KernelGraphBuilder,
+    architecture: Architecture,
+    layer: Layer,
+    input_name: str,
+) -> str:
+    hidden_size = architecture.summary.get("hidden_size")
+    attention = _component_details(layer, "mimo_v2_attention")
+    heads = attention.get("attention_heads") or architecture.summary.get("attention_heads")
+    kv_heads = attention.get("kv_heads") or architecture.summary.get("kv_heads") or heads
+    head_dim = attention.get("head_dim") or architecture.text_decoder.get("attention", {}).get("head_dim")
+    v_head_dim = attention.get("v_head_dim") or head_dim
+    q_size = attention.get("q_size") or _product(heads, head_dim)
+    k_size = attention.get("k_size") or _product(kv_heads, head_dim)
+    v_size = attention.get("v_size") or _product(kv_heads, v_head_dim)
+    qkv_size = attention.get("qkv_size") or _sum_dims(_sum_dims(q_size, k_size), v_size)
+    o_hidden_size = attention.get("o_hidden_size") or _product(heads, v_head_dim)
+
+    q_shape = ["batch", "sequence", heads or "heads", head_dim or "head_dim"]
+    k_shape = ["batch", "sequence", kv_heads or "kv_heads", head_dim or "head_dim"]
+    v_shape = ["batch", "sequence", kv_heads or "kv_heads", v_head_dim or "v_head_dim"]
+    projection_layout = str(attention.get("projection_layout") or "split")
+
+    if projection_layout == "fused_qkv":
+        qkv = builder.node(
+            "qkv_proj",
+            "Linear",
+            [input_name],
+            ["qkv_proj_out"],
+            output_shapes=[["batch", "sequence", qkv_size or "q+k+v"]],
+            output_descriptions=["MiMo fused Q/K/V projection output."],
+            in_features=hidden_size,
+            out_features=qkv_size,
+            logical_weight="self_attn.qkv_proj.weight",
+            projection_layout=projection_layout,
+        )
+        q, k, v = _split_qkv(
+            builder,
+            qkv,
+            q_name="q_proj_out",
+            k_name="k_proj_out",
+            v_name="v_proj_out",
+            q_shape=["batch", "sequence", q_size or "heads*head_dim"],
+            k_shape=["batch", "sequence", k_size or "kv_heads*head_dim"],
+            v_shape=["batch", "sequence", v_size or "kv_heads*v_head_dim"],
+            q_size=q_size,
+            k_size=k_size,
+            v_size=v_size,
+        )
+    else:
+        q = builder.node(
+            "q_proj",
+            "Linear",
+            [input_name],
+            ["q_proj_out"],
+            output_shapes=[["batch", "sequence", q_size or "heads*head_dim"]],
+            output_descriptions=["MiMo query projection output."],
+            in_features=hidden_size,
+            out_features=q_size,
+            logical_weight="self_attn.q_proj.weight",
+            projection_layout=projection_layout,
+        )
+        k = builder.node(
+            "k_proj",
+            "Linear",
+            [input_name],
+            ["k_proj_out"],
+            output_shapes=[["batch", "sequence", k_size or "kv_heads*head_dim"]],
+            output_descriptions=["MiMo key projection output."],
+            in_features=hidden_size,
+            out_features=k_size,
+            logical_weight="self_attn.k_proj.weight",
+            projection_layout=projection_layout,
+        )
+        v = builder.node(
+            "v_proj",
+            "Linear",
+            [input_name],
+            ["v_proj_out"],
+            output_shapes=[["batch", "sequence", v_size or "kv_heads*v_head_dim"]],
+            output_descriptions=["MiMo value projection output."],
+            in_features=hidden_size,
+            out_features=v_size,
+            logical_weight="self_attn.v_proj.weight",
+            projection_layout=projection_layout,
+        )
+
+    q_heads = builder.node(
+        "reshape_q",
+        "ReshapeHeads",
+        [q],
+        ["q_heads"],
+        output_shapes=[q_shape],
+        heads=heads,
+        head_dim=head_dim,
+    )
+    k_heads = builder.node(
+        "reshape_k",
+        "ReshapeHeads",
+        [k],
+        ["k_heads"],
+        output_shapes=[k_shape],
+        heads=kv_heads,
+        head_dim=head_dim,
+    )
+    v_heads = builder.node(
+        "reshape_v",
+        "ReshapeHeads",
+        [v],
+        ["v_heads"],
+        output_shapes=[v_shape],
+        heads=kv_heads,
+        head_dim=v_head_dim,
+    )
+    if attention.get("attention_value_scale") is not None:
+        v_heads = builder.node(
+            "value_scale",
+            "ValueScale",
+            [v_heads],
+            ["v_scaled"],
+            output_shapes=[v_shape],
+            scale=attention.get("attention_value_scale"),
+        )
+
+    q_pos = builder.node(
+        "partial_rope_q",
+        "PartialRoPE",
+        [q_heads],
+        ["q_partial_rope"],
+        output_shapes=[q_shape],
+        rope_dim=attention.get("rope_dim"),
+        theta=attention.get("rope_theta"),
+        partial_rotary_factor=attention.get("partial_rotary_factor"),
+    )
+    k_pos = builder.node(
+        "partial_rope_k",
+        "PartialRoPE",
+        [k_heads],
+        ["k_partial_rope"],
+        output_shapes=[k_shape],
+        rope_dim=attention.get("rope_dim"),
+        theta=attention.get("rope_theta"),
+        partial_rotary_factor=attention.get("partial_rotary_factor"),
+    )
+
+    if attention.get("sliding_window"):
+        k_cache_shape = ["batch", attention.get("sliding_window") or "window", kv_heads or "kv_heads", head_dim or "head_dim"]
+        v_cache_shape = ["batch", attention.get("sliding_window") or "window", kv_heads or "kv_heads", v_head_dim or "v_head_dim"]
+        cache_k = builder.node(
+            "ring_kv_cache_update_k",
+            "RingKVCacheUpdate",
+            [k_pos],
+            ["k_cache"],
+            output_shapes=[k_cache_shape],
+            window=attention.get("sliding_window"),
+        )
+        cache_v = builder.node(
+            "ring_kv_cache_update_v",
+            "RingKVCacheUpdate",
+            [v_heads],
+            ["v_cache"],
+            output_shapes=[v_cache_shape],
+            window=attention.get("sliding_window"),
+        )
+        kv_sequence_dim = attention.get("sliding_window") or "window"
+    else:
+        k_cache_shape = ["batch", "kv_sequence", kv_heads or "kv_heads", head_dim or "head_dim"]
+        v_cache_shape = ["batch", "kv_sequence", kv_heads or "kv_heads", v_head_dim or "v_head_dim"]
+        cache_k = builder.node("kv_cache_update_k", "KVCacheUpdate", [k_pos], ["k_cache"], output_shapes=[k_cache_shape])
+        cache_v = builder.node("kv_cache_update_v", "KVCacheUpdate", [v_heads], ["v_cache"], output_shapes=[v_cache_shape])
+        kv_sequence_dim = "kv_sequence"
+
+    repeated_k = builder.node(
+        "repeat_k",
+        "RepeatKV",
+        [cache_k],
+        ["k_repeated"],
+        output_shapes=[["batch", kv_sequence_dim, heads or "heads", head_dim or "head_dim"]],
+        groups=_kv_groups(heads, kv_heads),
+    )
+    repeated_v = builder.node(
+        "repeat_v",
+        "RepeatKV",
+        [cache_v],
+        ["v_repeated"],
+        output_shapes=[["batch", kv_sequence_dim, heads or "heads", v_head_dim or "v_head_dim"]],
+        groups=_kv_groups(heads, kv_heads),
+    )
+    scores = builder.node(
+        "attention_scores",
+        "MatMulQK",
+        [q_pos, repeated_k],
+        ["attention_scores"],
+        output_shapes=[["batch", heads or "heads", "sequence", kv_sequence_dim]],
+        scale="1/sqrt(%s)" % (head_dim or "head_dim"),
+    )
+    masked = builder.node(
+        "causal_or_sliding_mask",
+        "CausalMask",
+        [scores],
+        ["masked_scores"],
+        output_shapes=[["batch", heads or "heads", "sequence", kv_sequence_dim]],
+        attention_chunk_size=attention.get("attention_chunk_size"),
+        sliding_window=attention.get("sliding_window"),
+    )
+    softmax_input = masked
+    if attention.get("attention_sink_bias"):
+        softmax_input = builder.node(
+            "attention_sink_bias",
+            "AttentionSinkBias",
+            [masked],
+            ["sink_biased_scores"],
+            output_shapes=[["batch", heads or "heads", "sequence", kv_sequence_dim]],
+            heads=heads,
+        )
+    probs = builder.node(
+        "softmax",
+        "Softmax",
+        [softmax_input],
+        ["attention_probs"],
+        output_shapes=[["batch", heads or "heads", "sequence", kv_sequence_dim]],
+        axis=-1,
+    )
+    dropped = builder.node(
+        "attention_dropout",
+        "Dropout",
+        [probs],
+        ["attention_probs_dropout"],
+        output_shapes=[["batch", heads or "heads", "sequence", kv_sequence_dim]],
+        ratio=attention.get("attention_dropout"),
+    )
+    context = builder.node(
+        "attention_context",
+        "MatMulPV",
+        [dropped, repeated_v],
+        ["attention_context"],
+        output_shapes=[["batch", "sequence", heads or "heads", v_head_dim or "v_head_dim"]],
+    )
+    merged = builder.node(
+        "merge_heads",
+        "MergeHeads",
+        [context],
+        ["attention_merged"],
+        output_shapes=[["batch", "sequence", o_hidden_size or "heads*v_head_dim"]],
+        hidden_size=o_hidden_size,
+    )
+    return builder.node(
+        "o_proj",
+        "Linear",
+        [merged],
+        ["attention_output"],
+        output_shapes=[["batch", "sequence", hidden_size or "hidden"]],
+        in_features=o_hidden_size,
+        out_features=hidden_size,
+        logical_weight="self_attn.o_proj.weight",
+    )
+
+
+def _split_qkv(
+    builder: KernelGraphBuilder,
+    qkv: str,
+    q_name: str,
+    k_name: str,
+    v_name: str,
+    q_shape: List[Any],
+    k_shape: List[Any],
+    v_shape: List[Any],
+    q_size: Any,
+    k_size: Any,
+    v_size: Any,
+) -> List[str]:
+    builder.node(
+        "split_qkv",
+        "SplitQKV",
+        [qkv],
+        [q_name, k_name, v_name],
+        output_shapes=[q_shape, k_shape, v_shape],
+        q_size=q_size,
+        k_size=k_size,
+        v_size=v_size,
+    )
+    return [q_name, k_name, v_name]
 
 
 def _build_bloom_attention_core(
@@ -1833,6 +2314,10 @@ def _build_moe_core(
         return _build_kimi_moe_core(builder, architecture, layer, input_name)
     if _is_glm_moe_dsa_arch(architecture, layer):
         return _build_glm_moe_core(builder, architecture, layer, input_name)
+    if _is_hy_v3_arch(architecture, layer):
+        return _build_hy_v3_moe_core(builder, architecture, layer, input_name)
+    if _is_mimo_v2_arch(architecture, layer):
+        return _build_mimo_v2_moe_core(builder, architecture, layer, input_name)
 
     hidden_size = architecture.summary.get("hidden_size")
     router = _component_details(layer, "router")
@@ -1995,6 +2480,399 @@ def _build_moe_core(
             ["moe_flat_output"],
             output_shapes=[["tokens", hidden_size or "hidden"]],
         )
+    return builder.node(
+        "unflatten_tokens",
+        "UnflattenTokens",
+        [combined],
+        ["moe_output"],
+        output_shapes=[["batch", "sequence", hidden_size or "hidden"]],
+    )
+
+
+def _build_mimo_v2_moe_core(
+    builder: KernelGraphBuilder,
+    architecture: Architecture,
+    layer: Layer,
+    input_name: str,
+) -> str:
+    hidden_size = architecture.summary.get("hidden_size")
+    router = _component_details(layer, "router")
+    routed = _component_details(layer, "expert_gate/up/down_proj")
+    top_k = router.get("activated_experts") or "top_k"
+    experts = router.get("experts") or "experts"
+    intermediate = routed.get("intermediate_size") or "intermediate"
+
+    flat = builder.node(
+        "flatten_tokens",
+        "FlattenTokens",
+        [input_name],
+        ["tokens_flat"],
+        output_shapes=[["tokens", hidden_size or "hidden"]],
+    )
+    logits = builder.node(
+        "router",
+        "RouterLinear",
+        [flat],
+        ["router_logits"],
+        output_shapes=[["tokens", experts]],
+        in_features=hidden_size,
+        experts=router.get("experts"),
+        logical_weight="mlp.gate.weight",
+        scoring_func=router.get("scoring_func"),
+    )
+    scores = builder.node(
+        "router_sigmoid",
+        "Sigmoid",
+        [logits],
+        ["router_scores"],
+        output_shapes=[["tokens", experts]],
+    )
+    selection_scores = scores
+    if router.get("score_correction_bias"):
+        selection_scores = builder.node(
+            "router_score_correction_bias",
+            "RouterBiasAdd",
+            [scores],
+            ["router_selection_scores"],
+            output_shapes=[["tokens", experts]],
+            experts=router.get("experts"),
+            logical_weight="mlp.gate.e_score_correction_bias",
+        )
+    group_topk = builder.node(
+        "router_group_topk",
+        "GroupTopK",
+        [selection_scores],
+        ["router_selected_groups", "router_group_mask"],
+        output_shapes=[
+            ["tokens", router.get("topk_group") or "topk_group"],
+            ["tokens", router.get("n_group") or "groups"],
+        ],
+        output_dtypes=["int64", "float32"],
+        groups=router.get("n_group"),
+        topk_group=router.get("topk_group"),
+        experts=router.get("experts"),
+    )
+    topk = builder.node(
+        "router_masked_topk",
+        "MaskedTopK",
+        [selection_scores, "router_group_mask"],
+        ["router_topk_indices", "router_selection_topk_scores"],
+        output_shapes=[
+            ["tokens", top_k],
+            ["tokens", top_k],
+        ],
+        output_dtypes=["int64", "float32"],
+        k=router.get("activated_experts"),
+        groups=router.get("n_group"),
+    )
+    gathered = builder.node(
+        "gather_router_scores",
+        "GatherRouterScores",
+        [scores, topk],
+        ["router_topk_scores"],
+        output_shapes=[["tokens", top_k]],
+    )
+    weights = builder.node(
+        "router_normalize_scale",
+        "RouterNormalizeScale",
+        [gathered],
+        ["router_weights"],
+        output_shapes=[["tokens", top_k]],
+        route_scale=router.get("route_scale"),
+        norm_topk_prob=router.get("norm_topk_prob"),
+    )
+    dispatched = builder.node(
+        "dispatch_tokens",
+        "DispatchTokens",
+        [flat, topk, weights],
+        ["routed_tokens"],
+        output_shapes=[["tokens", top_k, hidden_size or "hidden"]],
+        experts=router.get("experts"),
+        top_k=router.get("activated_experts"),
+    )
+    gate = builder.node(
+        "routed_expert_gate_proj",
+        "GroupedGEMM",
+        [dispatched],
+        ["routed_gate"],
+        output_shapes=[["tokens", top_k, intermediate]],
+        experts=routed.get("experts"),
+        in_features=hidden_size,
+        out_features=routed.get("intermediate_size"),
+        logical_weight="mlp.experts.*.gate_proj.weight",
+        expert_dtype=routed.get("expert_dtype"),
+    )
+    up = builder.node(
+        "routed_expert_up_proj",
+        "GroupedGEMM",
+        [dispatched],
+        ["routed_up"],
+        output_shapes=[["tokens", top_k, intermediate]],
+        experts=routed.get("experts"),
+        in_features=hidden_size,
+        out_features=routed.get("intermediate_size"),
+        logical_weight="mlp.experts.*.up_proj.weight",
+        expert_dtype=routed.get("expert_dtype"),
+    )
+    activated = builder.node(
+        "routed_activation",
+        _activation_op(routed.get("activation")),
+        [gate],
+        ["routed_gate_activated"],
+        output_shapes=[["tokens", top_k, intermediate]],
+    )
+    multiplied = builder.node(
+        "routed_gate_up_mul",
+        "Mul",
+        [activated, up],
+        ["routed_product"],
+        output_shapes=[["tokens", top_k, intermediate]],
+    )
+    down = builder.node(
+        "routed_expert_down_proj",
+        "GroupedGEMM",
+        [multiplied],
+        ["routed_expert_output"],
+        output_shapes=[["tokens", top_k, hidden_size or "hidden"]],
+        experts=routed.get("experts"),
+        in_features=routed.get("intermediate_size"),
+        out_features=hidden_size,
+        logical_weight="mlp.experts.*.down_proj.weight",
+        expert_dtype=routed.get("expert_dtype"),
+    )
+    weighted = builder.node(
+        "apply_router_weights",
+        "ApplyRouterWeights",
+        [down, weights],
+        ["weighted_expert_output"],
+        output_shapes=[["tokens", top_k, hidden_size or "hidden"]],
+    )
+    reduced = builder.node(
+        "index_add_experts",
+        "ExpertReduce",
+        [weighted, topk],
+        ["routed_output"],
+        output_shapes=[["tokens", hidden_size or "hidden"]],
+    )
+    return builder.node(
+        "unflatten_tokens",
+        "UnflattenTokens",
+        [reduced],
+        ["moe_output"],
+        output_shapes=[["batch", "sequence", hidden_size or "hidden"]],
+    )
+
+
+def _build_hy_v3_moe_core(
+    builder: KernelGraphBuilder,
+    architecture: Architecture,
+    layer: Layer,
+    input_name: str,
+) -> str:
+    hidden_size = architecture.summary.get("hidden_size")
+    router = _component_details(layer, "router")
+    routed = _component_details(layer, "expert_gate/up/down_proj")
+    shared = _component_details(layer, "shared_expert_gate/up/down_proj")
+    top_k = router.get("activated_experts") or "top_k"
+    intermediate = routed.get("intermediate_size") or "intermediate"
+
+    flat = builder.node(
+        "flatten_tokens",
+        "FlattenTokens",
+        [input_name],
+        ["tokens_flat"],
+        output_shapes=[["tokens", hidden_size or "hidden"]],
+    )
+    logits = builder.node(
+        "router_gate",
+        "RouterLinear",
+        [flat],
+        ["router_logits"],
+        output_shapes=[["tokens", router.get("experts") or "experts"]],
+        in_features=hidden_size,
+        experts=router.get("experts"),
+        logical_weight="mlp.router.gate.weight",
+    )
+    routing_weights = builder.node(
+        "router_sigmoid",
+        "Sigmoid",
+        [logits],
+        ["routing_weights"],
+        output_shapes=[["tokens", router.get("experts") or "experts"]],
+    )
+    selection_scores = routing_weights
+    if router.get("score_correction_bias"):
+        selection_scores = builder.node(
+            "router_expert_bias",
+            "RouterBiasAdd",
+            [routing_weights],
+            ["selection_scores"],
+            output_shapes=[["tokens", router.get("experts") or "experts"]],
+            logical_weight="mlp.expert_bias",
+        )
+    topk = builder.node(
+        "router_topk",
+        "TopK",
+        [selection_scores],
+        ["router_topk_indices", "router_selection_topk_scores"],
+        output_shapes=[
+            ["tokens", top_k],
+            ["tokens", top_k],
+        ],
+        output_dtypes=["int64", "float32"],
+        k=router.get("activated_experts"),
+        sorted=False,
+    )
+    gathered = builder.node(
+        "gather_router_weights",
+        "GatherRouterScores",
+        [routing_weights, topk],
+        ["router_topk_weights"],
+        output_shapes=[["tokens", top_k]],
+    )
+    weights = builder.node(
+        "router_normalize_scale",
+        "RouterNormalizeScale",
+        [gathered],
+        ["router_weights"],
+        output_shapes=[["tokens", top_k]],
+        route_scale=router.get("route_scale"),
+        norm_topk_prob=router.get("norm_topk_prob"),
+    )
+    dispatched = builder.node(
+        "dispatch_tokens",
+        "DispatchTokens",
+        [flat, topk, weights],
+        ["routed_tokens"],
+        output_shapes=[["tokens", top_k, hidden_size or "hidden"]],
+        experts=router.get("experts"),
+        top_k=router.get("activated_experts"),
+    )
+    grouped_op = _grouped_gemm_op(routed)
+    gate = builder.node(
+        "routed_expert_gate_proj",
+        grouped_op,
+        [dispatched],
+        ["routed_gate"],
+        output_shapes=[["tokens", top_k, intermediate]],
+        experts=routed.get("experts"),
+        in_features=hidden_size,
+        out_features=routed.get("intermediate_size"),
+        logical_weight="mlp.experts.*.gate_proj.weight",
+        expert_dtype=routed.get("expert_dtype"),
+        use_grouped_mm=routed.get("use_grouped_mm"),
+    )
+    up = builder.node(
+        "routed_expert_up_proj",
+        grouped_op,
+        [dispatched],
+        ["routed_up"],
+        output_shapes=[["tokens", top_k, intermediate]],
+        experts=routed.get("experts"),
+        in_features=hidden_size,
+        out_features=routed.get("intermediate_size"),
+        logical_weight="mlp.experts.*.up_proj.weight",
+        expert_dtype=routed.get("expert_dtype"),
+        use_grouped_mm=routed.get("use_grouped_mm"),
+    )
+    activated = builder.node(
+        "routed_activation",
+        _activation_op(routed.get("activation")),
+        [gate],
+        ["routed_gate_activated"],
+        output_shapes=[["tokens", top_k, intermediate]],
+    )
+    multiplied = builder.node(
+        "routed_gate_up_mul",
+        "Mul",
+        [activated, up],
+        ["routed_product"],
+        output_shapes=[["tokens", top_k, intermediate]],
+    )
+    down = builder.node(
+        "routed_expert_down_proj",
+        grouped_op,
+        [multiplied],
+        ["routed_expert_output"],
+        output_shapes=[["tokens", top_k, hidden_size or "hidden"]],
+        experts=routed.get("experts"),
+        in_features=routed.get("intermediate_size"),
+        out_features=hidden_size,
+        logical_weight="mlp.experts.*.down_proj.weight",
+        expert_dtype=routed.get("expert_dtype"),
+        use_grouped_mm=routed.get("use_grouped_mm"),
+    )
+    weighted = builder.node(
+        "apply_router_weights",
+        "ApplyRouterWeights",
+        [down, weights],
+        ["weighted_expert_output"],
+        output_shapes=[["tokens", top_k, hidden_size or "hidden"]],
+    )
+    routed_sum = builder.node(
+        "index_add_experts",
+        "ExpertReduce",
+        [weighted, topk],
+        ["routed_output"],
+        output_shapes=[["tokens", hidden_size or "hidden"]],
+    )
+
+    combined = routed_sum
+    if shared:
+        shared_intermediate = shared.get("intermediate_size") or "shared_intermediate"
+        shared_gate = builder.node(
+            "shared_expert_gate_proj",
+            "Linear",
+            [flat],
+            ["shared_gate"],
+            output_shapes=[["tokens", shared_intermediate]],
+            in_features=hidden_size,
+            out_features=shared.get("intermediate_size"),
+            logical_weight="mlp.shared_mlp.gate_proj.weight",
+        )
+        shared_up = builder.node(
+            "shared_expert_up_proj",
+            "Linear",
+            [flat],
+            ["shared_up"],
+            output_shapes=[["tokens", shared_intermediate]],
+            in_features=hidden_size,
+            out_features=shared.get("intermediate_size"),
+            logical_weight="mlp.shared_mlp.up_proj.weight",
+        )
+        shared_act = builder.node(
+            "shared_activation",
+            _activation_op(shared.get("activation")),
+            [shared_gate],
+            ["shared_gate_activated"],
+            output_shapes=[["tokens", shared_intermediate]],
+        )
+        shared_mul = builder.node(
+            "shared_gate_up_mul",
+            "Mul",
+            [shared_act, shared_up],
+            ["shared_product"],
+            output_shapes=[["tokens", shared_intermediate]],
+        )
+        shared_down = builder.node(
+            "shared_expert_down_proj",
+            "Linear",
+            [shared_mul],
+            ["shared_output"],
+            output_shapes=[["tokens", hidden_size or "hidden"]],
+            in_features=shared.get("intermediate_size"),
+            out_features=hidden_size,
+            logical_weight="mlp.shared_mlp.down_proj.weight",
+        )
+        combined = builder.node(
+            "add_routed_shared",
+            "Add",
+            [routed_sum, shared_down],
+            ["moe_tokens"],
+            output_shapes=[["tokens", hidden_size or "hidden"]],
+            fp32_combine=router.get("enable_moe_fp32_combine"),
+        )
+
     return builder.node(
         "unflatten_tokens",
         "UnflattenTokens",
@@ -2765,6 +3643,14 @@ def _is_glm_moe_dsa_arch(architecture: Architecture, layer: Optional[Layer] = No
     return _has_glm_dsa(layer)
 
 
+def _is_hy_v3_arch(architecture: Architecture, layer: Optional[Layer] = None) -> bool:
+    if str(architecture.model_type).lower().startswith("hy_v3"):
+        return True
+    if layer is None:
+        return False
+    return _has_hy_v3_attention(layer)
+
+
 def _is_kimi_k25_arch(architecture: Architecture, layer: Optional[Layer] = None) -> bool:
     if str(architecture.model_type).lower().startswith("kimi_k25"):
         return True
@@ -2773,6 +3659,14 @@ def _is_kimi_k25_arch(architecture: Architecture, layer: Optional[Layer] = None)
     if layer is None:
         return False
     return _has_kimi_mla(layer)
+
+
+def _is_mimo_v2_arch(architecture: Architecture, layer: Optional[Layer] = None) -> bool:
+    if str(architecture.model_type).lower().startswith("mimo_v2"):
+        return True
+    if layer is None:
+        return False
+    return _has_mimo_v2_attention(layer)
 
 
 def _has_deepseek_mla(layer: Layer) -> bool:
@@ -2793,6 +3687,14 @@ def _has_kimi_mla(layer: Layer) -> bool:
 
 def _has_glm_dsa(layer: Layer) -> bool:
     return bool(_component_details(layer, "glm_dsa_attention"))
+
+
+def _has_hy_v3_attention(layer: Layer) -> bool:
+    return bool(_component_details(layer, "hy_v3_attention"))
+
+
+def _has_mimo_v2_attention(layer: Layer) -> bool:
+    return bool(_component_details(layer, "mimo_v2_attention"))
 
 
 def _ensure_graph_input(
@@ -2899,6 +3801,8 @@ def _description_for_op(op_type: str) -> str:
         "CausalMask": "Apply causal and optional local/chunk mask.",
         "Softmax": "Normalize logits into attention probabilities.",
         "Dropout": "Drop attention probabilities during training.",
+        "ValueScale": "Scale MiMo value heads before cache update and attention.",
+        "AttentionSinkBias": "Apply MiMo learned per-head attention sink bias before softmax.",
         "MatMulPV": "Compute weighted value context.",
         "SparseAttention": "DeepSeek sparse attention kernel with indexed KV gather and online softmax.",
         "DynamicSparseAttention": "GLM dynamic sparse attention using top-k selected KV positions.",
@@ -2924,6 +3828,8 @@ def _description_for_op(op_type: str) -> str:
         "UnflattenTokens": "Restore token dimension to batch and sequence dimensions.",
         "RouterLinear": "Compute MoE router logits over experts.",
         "RouterBiasAdd": "Add expert-selection bias before top-k routing.",
+        "GroupTopK": "Select expert groups before MiMo noaux_tc expert top-k routing.",
+        "MaskedTopK": "Select top-k experts after masking to the selected expert groups.",
         "HashRouteLookup": "Look up predetermined expert IDs from token IDs in hash-routed layers.",
         "GatherRouterScores": "Gather original router scores at selected expert indices.",
         "RouterNormalizeScale": "Normalize and scale selected router weights.",
@@ -2992,6 +3898,8 @@ def _formula_for_op(op_type: str, attrs: Dict[str, Any]) -> str:
         "CausalMask": "masked_scores = scores + causal_or_local_mask",
         "Softmax": "probs = exp(x - max(x)) / sum(exp(x - max(x)), axis=-1)",
         "Dropout": "y = dropout(x, p)",
+        "ValueScale": "y = alpha * value_heads",
+        "AttentionSinkBias": "scores = append_or_add_per_head_sink_logit(scores, sink_bias)",
         "MatMulPV": "context[B,H,S,D] = probs[B,H,S,QK] @ V[B,H,QK,D]",
         "SparseAttention": "o = online_softmax(q @ gather(kv, topk)^T * scale, attn_sink) @ gather(kv, topk)",
         "DynamicSparseAttention": "o = softmax(q @ gather(k, topk)^T / sqrt(Dqk)) @ gather(v, topk)",
@@ -3017,6 +3925,8 @@ def _formula_for_op(op_type: str, attrs: Dict[str, Any]) -> str:
         "UnflattenTokens": "y[B,S,H] = reshape(x[B*S,H])",
         "RouterLinear": "router_logits[T,%s] = tokens[T,H] @ W_router[%s,H]^T" % (experts, experts),
         "RouterBiasAdd": "selection_scores = router_scores + expert_bias",
+        "GroupTopK": "groups = top_k(sum(top2(reshape(selection_scores, G, E/G))), k=topk_group)",
+        "MaskedTopK": "indices, scores = top_k(mask_unselected_groups(selection_scores), k=%s)" % top_k,
         "HashRouteLookup": "indices[T,K] = tid2eid[input_ids[T], :K]",
         "GatherRouterScores": "selected_scores[T,K] = router_scores[T, indices[T,K]]",
         "RouterNormalizeScale": "weights = %s * selected_scores / sum(selected_scores, axis=-1)" % route_scale,

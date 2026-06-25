@@ -116,7 +116,7 @@ def _model_summary(
     summary = {
         "model_type": config.get("model_type") or text_config.get("model_type"),
         "architectures": config.get("architectures") or [],
-        "modalities": _modalities(vision_config),
+        "modalities": _modalities(config, vision_config),
         "layers": layer_count,
         "hidden_size": _pick_int(text_config, "hidden_size", "n_embed", "n_embd", "d_model", "model_dim"),
         "intermediate_size": _pick_int(text_config, "intermediate_size", "ffn_dim", "n_inner") or _bloom_mlp_intermediate(text_config),
@@ -180,10 +180,22 @@ def _text_decoder_summary(
                     "o_lora_rank": _pick_int(text_config, "o_lora_rank"),
                     "o_groups": _pick_int(text_config, "o_groups"),
                     "attention_bias": text_config.get("attention_bias"),
+                    "projection_layout": _mimo_v2_projection_layout(text_config),
+                    "partial_rotary_factor": text_config.get("partial_rotary_factor"),
+                    "attention_value_scale": text_config.get("attention_value_scale"),
                     "sliding_window": _pick_int(text_config, "sliding_window"),
+                    "sliding_window_size": _pick_int(text_config, "sliding_window_size"),
+                    "hybrid_layer_pattern": text_config.get("hybrid_layer_pattern"),
                     "attention_chunk_size": _pick_int(text_config, "attention_chunk_size"),
                     "attention_dropout": text_config.get("attention_dropout"),
-                    "use_qk_norm": text_config.get("use_qk_norm"),
+                    "swa_head_dim": _pick_int(text_config, "swa_head_dim"),
+                    "swa_v_head_dim": _pick_int(text_config, "swa_v_head_dim"),
+                    "swa_num_attention_heads": _pick_int(text_config, "swa_num_attention_heads"),
+                    "swa_num_key_value_heads": _pick_int(text_config, "swa_num_key_value_heads"),
+                    "swa_rope_theta": text_config.get("swa_rope_theta"),
+                    "add_full_attention_sink_bias": text_config.get("add_full_attention_sink_bias"),
+                    "add_swa_attention_sink_bias": text_config.get("add_swa_attention_sink_bias"),
+                    "use_qk_norm": text_config.get("use_qk_norm") if text_config.get("use_qk_norm") is not None else text_config.get("qk_norm"),
                     "compress_ratios": text_config.get("compress_ratios"),
                     "compress_rope_theta": text_config.get("compress_rope_theta"),
                     "index_n_heads": _pick_int(text_config, "index_n_heads"),
@@ -214,8 +226,14 @@ def _vision_summary(vision_config: Optional[Dict[str, Any]]) -> Optional[Dict[st
             "hidden_size": _pick_int(vision_config, "hidden_size", "vt_hidden_size", "d_model", "model_dim"),
             "intermediate_size": _pick_int(vision_config, "intermediate_size", "vt_intermediate_size", "ffn_dim"),
             "attention_heads": _pick_int(vision_config, "num_attention_heads", "vt_num_attention_heads", "num_heads"),
+            "kv_heads": _pick_int(vision_config, "num_key_value_heads", "num_kv_heads"),
+            "out_hidden_size": _pick_int(vision_config, "out_hidden_size"),
             "image_size": _pick_int(vision_config, "image_size"),
             "patch_size": _pick_int(vision_config, "patch_size"),
+            "temporal_patch_size": _pick_int(vision_config, "temporal_patch_size"),
+            "spatial_merge_size": _pick_int(vision_config, "spatial_merge_size"),
+            "window_size": _pick_int(vision_config, "window_size", "visual_token_window_size"),
+            "full_attention_blocks": vision_config.get("fullatt_block_indexes"),
             "attention_impl": vision_config.get("_attn_implementation"),
             "projector_type": vision_config.get("mm_projector_type"),
             "projector_hidden_size": _pick_int(vision_config, "mm_hidden_size"),
@@ -242,6 +260,10 @@ def _layer_components(
         return _kimi_k25_layer_components(text_config, layer_index, is_moe_layer)
     if _is_glm_moe_dsa(model_type, text_config):
         return _glm_moe_dsa_layer_components(text_config, layer_index, is_moe_layer)
+    if _is_hy_v3(model_type, text_config):
+        return _hy_v3_layer_components(text_config, layer_index, is_moe_layer)
+    if _is_mimo_v2(model_type, text_config):
+        return _mimo_v2_layer_components(text_config, layer_index, is_moe_layer)
 
     norm = _norm_type(text_config)
     rope = _rope_summary(text_config)
@@ -388,6 +410,203 @@ def _glm_moe_dsa_layer_components(
 
     components.append(Component("residual_add_1", "residual"))
     return components
+
+
+def _mimo_v2_layer_components(
+    text_config: Dict[str, Any],
+    layer_index: int,
+    is_moe_layer: bool,
+) -> List[Component]:
+    norm = _norm_type(text_config)
+    projection_layout = _mimo_v2_projection_layout(text_config)
+    attention_kind = "fused-QKV" if projection_layout == "fused_qkv" else "split-QKV"
+    components = [
+        Component("input", "activation"),
+        Component("input_layernorm", norm),
+        Component("mimo_v2_attention", "MiMo V2 %s hybrid GQA" % attention_kind, _mimo_v2_attention_details(text_config, layer_index)),
+        Component("residual_add_0", "residual"),
+        Component("post_attention_layernorm", norm),
+    ]
+
+    experts = _expert_count(text_config)
+    if is_moe_layer and experts is not None and experts > 1:
+        components.extend(
+            [
+                Component("router", "MiMo noaux_tc MoE router", _mimo_router_details(text_config)),
+                Component("expert_gate/up/down_proj", "routed expert SwiGLU", _mlp_summary(text_config, is_moe_layer=True)),
+                Component("combine_experts", "MoE weighted index_add combine"),
+            ]
+        )
+    else:
+        components.extend(
+            [
+                Component(
+                    "gate_proj/up_proj",
+                    "projection",
+                    _drop_none({"intermediate_size": _pick_int(text_config, "intermediate_size", "ffn_dim", "n_inner")}),
+                ),
+                Component(
+                    "activation",
+                    str(text_config.get("hidden_act") or text_config.get("activation_function") or "activation"),
+                ),
+                Component("down_proj", "projection"),
+            ]
+        )
+
+    components.append(Component("residual_add_1", "residual"))
+    return components
+
+
+def _hy_v3_layer_components(
+    text_config: Dict[str, Any],
+    layer_index: int,
+    is_moe_layer: bool,
+) -> List[Component]:
+    norm = _norm_type(text_config)
+    components = [
+        Component("input", "activation"),
+        Component("input_layernorm", norm),
+        Component("hy_v3_attention", "Hy3 GQA with Q/K RMSNorm", _hy_v3_attention_details(text_config, layer_index)),
+        Component("residual_add_0", "residual"),
+        Component("post_attention_layernorm", norm),
+    ]
+
+    experts = _expert_count(text_config)
+    if is_moe_layer and experts is not None and experts > 1:
+        components.extend(
+            [
+                Component("router", "Hy3 sigmoid bias top-k router", _hy_v3_router_details(text_config)),
+                Component("expert_gate/up/down_proj", "routed expert SwiGLU", _mlp_summary(text_config, is_moe_layer=True)),
+                Component("shared_expert_gate/up/down_proj", "shared expert SwiGLU", _shared_expert_summary(text_config)),
+                Component("combine_experts", "routed plus shared MoE combine"),
+            ]
+        )
+    else:
+        components.extend(
+            [
+                Component(
+                    "gate_proj/up_proj",
+                    "projection",
+                    _drop_none({"intermediate_size": _pick_int(text_config, "intermediate_size", "ffn_dim", "n_inner")}),
+                ),
+                Component(
+                    "activation",
+                    str(text_config.get("hidden_act") or text_config.get("activation_function") or "activation"),
+                ),
+                Component("down_proj", "projection"),
+            ]
+        )
+
+    components.append(Component("residual_add_1", "residual"))
+    return components
+
+
+def _hy_v3_attention_details(text_config: Dict[str, Any], layer_index: int) -> Dict[str, Any]:
+    heads = _pick_int(text_config, "num_attention_heads", "n_head", "num_heads")
+    kv_heads = _kv_heads(text_config)
+    head_dim = _head_dim(text_config)
+    q_size = _product_int(heads, head_dim)
+    kv_size = _product_int(kv_heads, head_dim)
+    return _drop_none(
+        {
+            "type": "gqa",
+            "attention_heads": heads,
+            "kv_heads": kv_heads,
+            "kv_groups": _mimo_kv_groups(heads, kv_heads),
+            "head_dim": head_dim,
+            "q_size": q_size,
+            "k_size": kv_size,
+            "v_size": kv_size,
+            "o_hidden_size": q_size,
+            "qk_norm": text_config.get("qk_norm") if text_config.get("qk_norm") is not None else text_config.get("use_qk_norm"),
+            "q_norm": "HYV3RMSNorm",
+            "k_norm": "HYV3RMSNorm",
+            "rope_theta": (text_config.get("rope_parameters") or {}).get("rope_theta") if isinstance(text_config.get("rope_parameters"), dict) else text_config.get("rope_theta"),
+            "rope_type": (text_config.get("rope_parameters") or {}).get("rope_type") if isinstance(text_config.get("rope_parameters"), dict) else text_config.get("rope_type"),
+            "attention_bias": text_config.get("attention_bias"),
+            "attention_dropout": text_config.get("attention_dropout"),
+            "fp32_softmax": True,
+            "enable_attention_fp32_softmax": text_config.get("enable_attention_fp32_softmax"),
+            "layer_index": layer_index,
+        }
+    )
+
+
+def _hy_v3_router_details(text_config: Dict[str, Any]) -> Dict[str, Any]:
+    use_sigmoid = text_config.get("moe_router_use_sigmoid")
+    return _drop_none(
+        {
+            "experts": _expert_count(text_config),
+            "activated_experts": _activated_experts(text_config),
+            "shared_experts": _shared_expert_count(text_config),
+            "scoring_func": "sigmoid" if use_sigmoid is not False else "softmax",
+            "topk_method": "sigmoid_bias_topk" if text_config.get("moe_router_enable_expert_bias") else "topk",
+            "route_scale": text_config.get("router_scaling_factor"),
+            "norm_topk_prob": text_config.get("route_norm"),
+            "score_correction_bias": text_config.get("moe_router_enable_expert_bias"),
+            "output_router_logits": text_config.get("output_router_logits"),
+            "enable_moe_fp32_combine": text_config.get("enable_moe_fp32_combine"),
+            "use_grouped_mm": text_config.get("use_grouped_mm"),
+        }
+    )
+
+
+def _mimo_v2_attention_details(text_config: Dict[str, Any], layer_index: int) -> Dict[str, Any]:
+    is_swa = _mimo_layer_is_swa(text_config, layer_index)
+    heads = _mimo_attention_heads(text_config, is_swa)
+    kv_heads = _mimo_kv_heads(text_config, is_swa)
+    head_dim = _mimo_head_dim(text_config, is_swa)
+    v_head_dim = _mimo_v_head_dim(text_config, is_swa, head_dim)
+    q_size = _product_int(heads, head_dim)
+    k_size = _product_int(kv_heads, head_dim)
+    v_size = _product_int(kv_heads, v_head_dim)
+    partial_rotary_factor = _as_float(text_config.get("partial_rotary_factor"))
+    rope_dim = int(head_dim * partial_rotary_factor) if head_dim is not None and partial_rotary_factor is not None else None
+    return _drop_none(
+        {
+            "type": "sliding_window_attention" if is_swa else "full_attention",
+            "attention_heads": heads,
+            "kv_heads": kv_heads,
+            "kv_groups": _mimo_kv_groups(heads, kv_heads),
+            "head_dim": head_dim,
+            "v_head_dim": v_head_dim,
+            "q_size": q_size,
+            "k_size": k_size,
+            "v_size": v_size,
+            "qkv_size": _sum_ints(q_size, k_size, v_size),
+            "o_hidden_size": _product_int(heads, v_head_dim),
+            "projection_layout": _mimo_v2_projection_layout(text_config),
+            "partial_rotary_factor": partial_rotary_factor,
+            "rope_dim": rope_dim,
+            "rope_theta": text_config.get("swa_rope_theta") if is_swa else text_config.get("rope_theta"),
+            "attention_value_scale": text_config.get("attention_value_scale"),
+            "sliding_window": _pick_int(text_config, "sliding_window", "sliding_window_size") if is_swa else None,
+            "attention_chunk_size": _pick_int(text_config, "attention_chunk_size"),
+            "attention_sink_bias": (
+                text_config.get("add_swa_attention_sink_bias") if is_swa else text_config.get("add_full_attention_sink_bias")
+            ),
+            "attention_dropout": text_config.get("attention_dropout"),
+            "attention_bias": text_config.get("attention_bias"),
+            "layer_index": layer_index,
+        }
+    )
+
+
+def _mimo_router_details(text_config: Dict[str, Any]) -> Dict[str, Any]:
+    return _drop_none(
+        {
+            "experts": _expert_count(text_config),
+            "activated_experts": _activated_experts(text_config),
+            "shared_experts": _pick_int(text_config, "num_shared_experts", "n_shared_experts"),
+            "scoring_func": text_config.get("scoring_func") or text_config.get("score_func"),
+            "topk_method": text_config.get("topk_method"),
+            "n_group": _pick_int(text_config, "n_group"),
+            "topk_group": _pick_int(text_config, "topk_group"),
+            "route_scale": text_config.get("routed_scaling_factor") if text_config.get("routed_scaling_factor") is not None else 1.0,
+            "norm_topk_prob": text_config.get("norm_topk_prob"),
+            "score_correction_bias": text_config.get("topk_method") == "noaux_tc",
+        }
+    )
 
 
 def _glm_dsa_attention_details(text_config: Dict[str, Any], layer_index: int) -> Dict[str, Any]:
@@ -642,9 +861,22 @@ def _attention_type(text_config: Dict[str, Any]) -> str:
         return "Kimi/DeepSeek-V3 MLA"
     if model_type.startswith("glm_moe_dsa"):
         return "GLM DSA/MLA"
+    if model_type.startswith("hy_v3"):
+        return "Hy3 GQA + Q/K RMSNorm + RoPE"
+    if model_type.startswith("mimo_v2"):
+        return "MiMo V2 hybrid GQA + partial RoPE"
     if _pick_int(text_config, "q_lora_rank") is not None:
         return "MLA"
     return "MHA/GQA"
+
+
+def _mimo_v2_projection_layout(text_config: Dict[str, Any]) -> Optional[str]:
+    layout = text_config.get("attention_projection_layout")
+    if layout:
+        return str(layout)
+    if str(text_config.get("model_type") or "").lower().startswith("mimo_v2"):
+        return "split"
+    return None
 
 
 def _head_dim(text_config: Dict[str, Any]) -> Optional[int]:
@@ -763,6 +995,16 @@ def _is_glm_moe_dsa(model_type: str, text_config: Dict[str, Any]) -> bool:
     return text_model_type.startswith("glm_moe_dsa")
 
 
+def _is_hy_v3(model_type: str, text_config: Dict[str, Any]) -> bool:
+    text_model_type = str(text_config.get("model_type") or model_type or "").lower()
+    return text_model_type.startswith("hy_v3")
+
+
+def _is_mimo_v2(model_type: str, text_config: Dict[str, Any]) -> bool:
+    text_model_type = str(text_config.get("model_type") or model_type or "").lower()
+    return text_model_type.startswith("mimo_v2")
+
+
 def _mlp_summary(text_config: Dict[str, Any], is_moe_layer: bool = False) -> Dict[str, Any]:
     experts = _expert_count(text_config)
     intermediate_keys = (
@@ -778,12 +1020,13 @@ def _mlp_summary(text_config: Dict[str, Any], is_moe_layer: bool = False) -> Dic
             "activation": text_config.get("hidden_act") or text_config.get("activation_function"),
             "experts": experts if is_moe_layer else None,
             "activated_experts": _activated_experts(text_config) if is_moe_layer else None,
-            "scoring_func": (text_config.get("scoring_func") or text_config.get("score_func")) if is_moe_layer else None,
-            "topk_method": text_config.get("topk_method") if is_moe_layer else None,
-            "route_scale": text_config.get("routed_scaling_factor") or text_config.get("route_scale") if is_moe_layer else None,
-            "norm_topk_prob": text_config.get("norm_topk_prob") if is_moe_layer else None,
+            "scoring_func": _router_scoring_func(text_config) if is_moe_layer else None,
+            "topk_method": _router_topk_method(text_config) if is_moe_layer else None,
+            "route_scale": _router_route_scale(text_config) if is_moe_layer else None,
+            "norm_topk_prob": _router_norm_topk(text_config) if is_moe_layer else None,
             "expert_dtype": _expert_dtype(text_config) if is_moe_layer else None,
             "swiglu_limit": text_config.get("swiglu_limit") if is_moe_layer else None,
+            "use_grouped_mm": text_config.get("use_grouped_mm") if is_moe_layer else None,
         }
     )
 
@@ -793,6 +1036,15 @@ def _expert_dtype(text_config: Dict[str, Any]) -> Optional[str]:
         return "int4-packed"
     if str(text_config.get("model_type") or "").lower().startswith("gpt_oss"):
         return "mxfp4"
+    if str(text_config.get("model_type") or "").lower().startswith("deepseek_v4"):
+        return "fp4"
+    if str(text_config.get("model_type") or "").lower().startswith("hy_v3"):
+        return "bfloat16"
+    quantization = text_config.get("quantization_config")
+    if isinstance(quantization, dict) and quantization.get("quant_method"):
+        method = str(quantization.get("quant_method"))
+        fmt = quantization.get("fmt")
+        return "%s-%s" % (method, fmt) if fmt else method
     explicit = text_config.get("expert_dtype") or text_config.get("dtype") or text_config.get("torch_dtype")
     if explicit:
         return str(explicit)
@@ -803,16 +1055,11 @@ def _shared_expert_summary(text_config: Dict[str, Any]) -> Dict[str, Any]:
     return _drop_none(
         {
             "type": "shared_dense",
-            "intermediate_size": _pick_int(
-                text_config,
-                "moe_intermediate_size",
-                "expert_intermediate_size",
-                "intermediate_size",
-                "ffn_dim",
-                "n_inner",
-            ),
+            "experts": _shared_expert_count(text_config),
+            "intermediate_size": _shared_expert_intermediate(text_config),
             "activation": text_config.get("hidden_act") or text_config.get("activation_function"),
             "swiglu_limit": text_config.get("swiglu_limit"),
+            "enable_moe_fp32_combine": text_config.get("enable_moe_fp32_combine"),
         }
     )
 
@@ -824,6 +1071,45 @@ def _shared_expert_count(text_config: Dict[str, Any]) -> Optional[int]:
     if str(text_config.get("model_type") or "").lower().startswith("llama4"):
         return 1
     return None
+
+
+def _shared_expert_intermediate(text_config: Dict[str, Any]) -> Optional[int]:
+    intermediate = _pick_int(
+        text_config,
+        "moe_intermediate_size",
+        "expert_intermediate_size",
+        "intermediate_size",
+        "ffn_dim",
+        "n_inner",
+    )
+    shared_experts = _shared_expert_count(text_config)
+    if str(text_config.get("model_type") or "").lower().startswith("hy_v3") and intermediate is not None and shared_experts:
+        return intermediate * shared_experts
+    return intermediate
+
+
+def _router_scoring_func(text_config: Dict[str, Any]) -> Optional[str]:
+    if str(text_config.get("model_type") or "").lower().startswith("hy_v3"):
+        return "sigmoid" if text_config.get("moe_router_use_sigmoid") is not False else "softmax"
+    return text_config.get("scoring_func") or text_config.get("score_func")
+
+
+def _router_topk_method(text_config: Dict[str, Any]) -> Optional[str]:
+    if str(text_config.get("model_type") or "").lower().startswith("hy_v3"):
+        return "sigmoid_bias_topk" if text_config.get("moe_router_enable_expert_bias") else "topk"
+    return text_config.get("topk_method")
+
+
+def _router_route_scale(text_config: Dict[str, Any]) -> Any:
+    if str(text_config.get("model_type") or "").lower().startswith("hy_v3"):
+        return text_config.get("router_scaling_factor")
+    return text_config.get("routed_scaling_factor") or text_config.get("route_scale")
+
+
+def _router_norm_topk(text_config: Dict[str, Any]) -> Any:
+    if str(text_config.get("model_type") or "").lower().startswith("hy_v3"):
+        return text_config.get("route_norm")
+    return text_config.get("norm_topk_prob")
 
 
 def _layer_type(model_type: str, text_config: Dict[str, Any]) -> str:
@@ -840,6 +1126,10 @@ def _layer_type(model_type: str, text_config: Dict[str, Any]) -> str:
         return "DeepseekDecoderLayer"
     if text_model_type.startswith("glm_moe_dsa"):
         return "GlmMoeDsaDecoderLayer"
+    if text_model_type.startswith("hy_v3"):
+        return "HYV3DecoderLayer"
+    if text_model_type.startswith("mimo_v2"):
+        return "MiMoV2DecoderLayer"
     if "glm" in text_model_type:
         return "GlmDecoderLayer"
     if "llama4" in text_model_type or "llama-4" in text_model_type:
@@ -877,6 +1167,8 @@ def _layer_type_for_index(
 
 
 def _norm_type(config: Dict[str, Any]) -> str:
+    if str(config.get("model_type") or "").lower().startswith("mimo_v2"):
+        return "RMSNorm"
     if "rms_norm_eps" in config:
         return "RMSNorm"
     if "layer_norm_eps" in config or "layer_norm_epsilon" in config:
@@ -937,6 +1229,8 @@ def _moe_layers(config: Dict[str, Any], layer_count: int) -> List[int]:
 
     explicit = config.get("moe_layers")
     if isinstance(explicit, list):
+        if _is_binary_layer_mask(explicit, layer_count):
+            return [index for index, value in enumerate(explicit[:layer_count]) if bool(_as_int(value))]
         return sorted(index for index in (_as_int(value) for value in explicit) if index is not None)
 
     mlp_layer_types = config.get("mlp_layer_types")
@@ -951,6 +1245,18 @@ def _moe_layers(config: Dict[str, Any], layer_count: int) -> List[int]:
     if isinstance(mlp_only_layers, list):
         dense_layers = {index for index in (_as_int(value) for value in mlp_only_layers) if index is not None}
         return [index for index in range(layer_count) if index not in dense_layers]
+
+    moe_layer_freq_raw = config.get("moe_layer_freq")
+    if isinstance(moe_layer_freq_raw, list):
+        if _is_binary_layer_mask(moe_layer_freq_raw, layer_count):
+            return [index for index, value in enumerate(moe_layer_freq_raw[:layer_count]) if bool(_as_int(value))]
+        return sorted(index for index in (_as_int(value) for value in moe_layer_freq_raw) if index is not None)
+
+    if _is_hy_v3(str(config.get("model_type") or ""), config):
+        first_dense = _pick_int(config, "first_k_dense_replace", "first_k_dense_layers")
+        if first_dense is None:
+            first_dense = 1
+        return list(range(max(first_dense, 0), layer_count))
 
     moe_layer_freq = _pick_int(config, "moe_layer_freq")
     if moe_layer_freq is not None:
@@ -987,10 +1293,15 @@ def _layer_uses_rope(config: Dict[str, Any], layer_index: int) -> Optional[bool]
     return None
 
 
-def _modalities(vision_config: Optional[Dict[str, Any]]) -> List[str]:
+def _modalities(config: Dict[str, Any], vision_config: Optional[Dict[str, Any]]) -> List[str]:
+    modalities = ["text"]
     if vision_config:
-        return ["text", "image"]
-    return ["text"]
+        modalities.append("image")
+    if isinstance(config.get("audio_config"), dict):
+        modalities.append("audio")
+    if config.get("video_token_id") is not None:
+        modalities.append("video")
+    return modalities
 
 
 def _notes(
@@ -1032,6 +1343,20 @@ def _notes(
         notes.append("IndexShare detected from indexer_types/index_topk_freq; shared indexer layers reuse sparse indices from full indexer layers.")
         if _pick_int(text_config, "num_nextn_predict_layers"):
             notes.append("MTP detected: %s next-token prediction layer(s) after the decoder stack." % _pick_int(text_config, "num_nextn_predict_layers"))
+    if _is_hy_v3(str(config.get("model_type") or ""), text_config):
+        notes.append("Hy3 detected: decoder uses split-QKV GQA with per-head Q/K RMSNorm before RoPE.")
+        notes.append("Hy3 MoE defaults to one dense prefix layer followed by sparse layers with sigmoid routing and expert correction bias.")
+        notes.append("Hy3 sparse FFNs combine routed experts with a shared SwiGLU MLP; router weights are normalized and scaled by router_scaling_factor.")
+        if _pick_int(text_config, "num_nextn_predict_layers"):
+            notes.append("MTP detected: %s next-token prediction layer(s); the upstream Transformers loader ignores model.layers.80.* unexpected keys for now." % _pick_int(text_config, "num_nextn_predict_layers"))
+    if _is_mimo_v2(str(config.get("model_type") or ""), text_config):
+        projection_layout = _mimo_v2_projection_layout(text_config)
+        projection_note = "fused-QKV" if projection_layout == "fused_qkv" else "split-QKV"
+        notes.append("MiMo V2 detected: language blocks use %s GQA with hybrid full/sliding-window attention." % projection_note)
+        notes.append("MiMo V2 attention applies partial RoPE, optional attention sink bias, value scaling, and separate SWA RoPE/head settings.")
+        notes.append("MiMo V2 MoE uses sigmoid noaux_tc routing with expert correction bias, group top-k selection, and normalized top-k weights.")
+        if isinstance(config.get("audio_config"), dict):
+            notes.append("Audio config detected; audio codes are projected into the text hidden size and fused through placeholder tokens.")
     if config.get("auto_map"):
         notes.append("auto_map detected; remote modeling code may contain additional implementation details. This tool does not execute remote code.")
     return notes
@@ -1055,11 +1380,77 @@ def _pick_int(config: Dict[str, Any], *keys: str) -> Optional[int]:
     return None
 
 
+def _mimo_layer_is_swa(text_config: Dict[str, Any], layer_index: int) -> bool:
+    pattern = text_config.get("hybrid_layer_pattern")
+    if isinstance(pattern, list) and layer_index < len(pattern):
+        return bool(_as_int(pattern[layer_index]))
+    return False
+
+
+def _mimo_attention_heads(text_config: Dict[str, Any], is_swa: bool) -> Optional[int]:
+    if is_swa:
+        return _pick_int(text_config, "swa_num_attention_heads", "num_attention_heads", "n_head", "num_heads")
+    return _pick_int(text_config, "num_attention_heads", "n_head", "num_heads")
+
+
+def _mimo_kv_heads(text_config: Dict[str, Any], is_swa: bool) -> Optional[int]:
+    if is_swa:
+        return _pick_int(text_config, "swa_num_key_value_heads", "num_key_value_heads", "num_kv_heads", "n_kv_heads")
+    return _pick_int(text_config, "num_key_value_heads", "num_kv_heads", "n_kv_heads")
+
+
+def _mimo_head_dim(text_config: Dict[str, Any], is_swa: bool) -> Optional[int]:
+    if is_swa:
+        return _pick_int(text_config, "swa_head_dim", "head_dim") or _head_dim(text_config)
+    return _pick_int(text_config, "head_dim") or _head_dim(text_config)
+
+
+def _mimo_v_head_dim(text_config: Dict[str, Any], is_swa: bool, head_dim: Optional[int]) -> Optional[int]:
+    if is_swa:
+        return _pick_int(text_config, "swa_v_head_dim", "v_head_dim") or head_dim
+    return _pick_int(text_config, "v_head_dim") or head_dim
+
+
+def _mimo_kv_groups(heads: Optional[int], kv_heads: Optional[int]) -> Optional[int]:
+    if heads is None or kv_heads in (None, 0):
+        return None
+    return heads // kv_heads
+
+
+def _is_binary_layer_mask(values: List[Any], layer_count: int) -> bool:
+    if len(values) < layer_count:
+        return False
+    parsed = [_as_int(value) for value in values[:layer_count]]
+    return all(value in (0, 1) for value in parsed)
+
+
+def _product_int(left: Optional[int], right: Optional[int]) -> Optional[int]:
+    if left is None or right is None:
+        return None
+    return left * right
+
+
+def _sum_ints(*values: Optional[int]) -> Optional[int]:
+    present = [value for value in values if value is not None]
+    if not present:
+        return None
+    return sum(present)
+
+
 def _as_int(value: Any) -> Optional[int]:
     if value is None:
         return None
     try:
         return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _as_float(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    try:
+        return float(value)
     except (TypeError, ValueError):
         return None
 

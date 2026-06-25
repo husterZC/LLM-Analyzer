@@ -1,0 +1,10 @@
+flowchart TD
+  image["Image input"] --> vision["Vision encoder\n28 layers\nhidden=1280\npatch=16"]
+  vision --> fusion["Multimodal projection / early fusion"]
+  tokens["Text token IDs"] --> embed["Token embedding\nvocab=152576\nhidden=4096"]
+  fusion --> decoder_input
+  embed --> decoder_input
+  decoder_input["Decoder input sequence"] --> layers
+  layers["48 x MiMoV2DecoderLayer\n47 MoE layers / 1 dense MLP layers\nMoE: 256 experts, top-8\nheads=64 kv_heads=4\nMiMo V2 hybrid GQA + partial RoPE"] --> final_norm["Final norm"]
+  final_norm --> lm_head["LM head"]
+  lm_head --> logits["Logits"]

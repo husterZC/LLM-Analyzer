@@ -1,0 +1,37 @@
+Hello, please loacte into LLM-Analyzer/ folder, use it as workspace
+----------------------------------------------------------------------------------------------------------
+
+
+I want to make this repo as a set of tools to anaylze Open-source SoA LLMs, for example those open-sourced on HuggingFace
+
+The first tool is architecture viewer:
+- input a model in huggingface
+- this tool can download only the metadata/confgiuration/modeling and all other informations but except weights, because they are heavy
+- from the downloaded inforamation, the tool draw the model archtecture diagram in a hierachtical way: 1. top: how many layers, each layer's type/name, 2. layer: dataflow and kernels {ROPE, Proj, ... etc} inside the layers
+
+Now can you please give me a plan how would you make this tool?
+----------------------------------------------------------------------------------------------------------
+
+Good, Can I ask, do you need the hugging face key?
+----------------------------------------------------------------------------------------------------------
+
+Good, now I want you build this tool and check for https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E this model
+----------------------------------------------------------------------------------------------------------
+
+Can you tell me how you config the neccesary env? and can you update in the README how to use it, espeically when first time clone it?
+----------------------------------------------------------------------------------------------------------
+
+Good! for this tool can you have more digram for detial inside attention and MLP/MOE?
+----------------------------------------------------------------------------------------------------------
+
+Good! now I want you to test the tool with https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro, of course there are new types of attentions and etc., and I need you dig into the modeling to learn them, please still lower down to microkernel levels
+----------------------------------------------------------------------------------------------------------
+
+Good!, please exam the following models:
+- https://huggingface.co/bigscience/bloom
+- https://huggingface.co/openai/gpt-oss-120b
+- https://huggingface.co/mistralai/Mistral-Medium-3.5-128B
+- https://huggingface.co/Qwen/Qwen3.5-122B-A10B
+- https://huggingface.co/Qwen/Qwen3.5-397B-A17B
+- https://huggingface.co/zai-org/GLM-5
+Please for all network accesses, just go ahead, no need ask my approval

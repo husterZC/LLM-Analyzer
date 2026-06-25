@@ -6,7 +6,6 @@ flowchart TD
   topk --> score["sigmoid / routing weights"]
   score --> dispatch["dispatch or scale token copies"]
   dispatch --> experts["routed expert MLPs\nexperts=128\nintermediate=2880\nactivation=silu\ndtype=mxfp4"]
-  experts --> reduce["sum routed expert outputs"]
   experts --> add["routed expert weighted sum"]
   add --> output["reshape to [B,T,hidden]"]
   output --> residual["residual add"]

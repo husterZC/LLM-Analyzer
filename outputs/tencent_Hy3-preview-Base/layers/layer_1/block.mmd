@@ -1,0 +1,23 @@
+flowchart TD
+  title["layers.1: HYV3DecoderLayer[MoE]"]
+  title -.-> n0
+  n0["input\nactivation"]
+  n1["input_layernorm\nRMSNorm"]
+  n2["hy_v3_attention\nHy3 GQA with Q/K RMSNorm\nattention_heads=64\nenable_attention_fp32_softmax=False\nfp32_softmax=True\nhead_dim=128\nk_norm=HYV3RMSNorm\nk_size=1024\nkv_groups=8\nkv_heads=8\nlayer_index=1\no_hidden_size=8192\nq_norm=HYV3RMSNorm\nq_size=8192\nqk_norm=True\nrope_theta=11158840.0\nrope_type=default\ntype=gqa\nv_size=1024"]
+  n3["residual_add_0\nresidual"]
+  n4["post_attention_layernorm\nRMSNorm"]
+  n5["router\nHy3 sigmoid bias top-k router\nactivated_experts=8\nenable_moe_fp32_combine=False\nexperts=192\nnorm_topk_prob=True\noutput_router_logits=True\nroute_scale=2.826\nscore_correction_bias=True\nscoring_func=sigmoid\nshared_experts=1\ntopk_method=sigmoid_bias_topk\nuse_grouped_mm=False"]
+  n6["expert_gate/up/down_proj\nrouted expert SwiGLU\nactivated_experts=8\nactivation=silu\nexpert_dtype=bfloat16\nexperts=192\nintermediate_size=1536\nmoe_intermediate_size=1536\nnorm_topk_prob=True\nroute_scale=2.826\nscoring_func=sigmoid\ntopk_method=sigmoid_bias_topk\ntype=MoE\nuse_grouped_mm=False"]
+  n7["shared_expert_gate/up/down_proj\nshared expert SwiGLU\nactivation=silu\nenable_moe_fp32_combine=False\nexperts=1\nintermediate_size=1536\ntype=shared_dense"]
+  n8["combine_experts\nrouted plus shared MoE combine"]
+  n9["residual_add_1\nresidual"]
+  n0 --> n1
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6
+  n8 --> n9
+  n4 --> n7
+  n6 --> n8
+  n7 --> n8

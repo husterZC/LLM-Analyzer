@@ -8,7 +8,7 @@ flowchart TD
   n4["post_attention_layernorm\nRMSNorm"]
   n5["router\nMoE router\nactivated_experts=8\nexperts=256\nnorm_topk_prob=True\nroute_scale=2.5\nscore_correction_bias=True\nscoring_func=sigmoid\nshared_experts=1\ntopk_group=1\ntopk_method=noaux_tc"]
   n6["expert_gate/up/down_proj\nrouted expert SwiGLU\nactivated_experts=8\nactivation=silu\nexpert_dtype=bfloat16\nexperts=256\nintermediate_size=2048\nmoe_intermediate_size=2048\nnorm_topk_prob=True\nroute_scale=2.5\nscoring_func=sigmoid\ntopk_method=noaux_tc\ntype=MoE"]
-  n7["shared_expert_gate/up/down_proj\nshared expert SwiGLU\nactivation=silu\nintermediate_size=2048\ntype=shared_dense"]
+  n7["shared_expert_gate/up/down_proj\nshared expert SwiGLU\nactivation=silu\nexperts=1\nintermediate_size=2048\ntype=shared_dense"]
   n8["combine_experts\nMoE combine"]
   n9["residual_add_1\nresidual"]
   n0 --> n1

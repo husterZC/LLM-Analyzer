@@ -9,9 +9,9 @@ flowchart TD
   n5["o_proj\nprojection"]
   n6["residual_add_0\nresidual"]
   n7["post_attention_layernorm\nRMSNorm"]
-  n8["router\nMoE router\nactivated_experts=1\nexperts=128\nrouter_aux_loss_coef=0.001"]
-  n9["expert_gate/up/down_proj\nrouted expert MLP\nactivated_experts=1\nactivation=silu\nexperts=128\nintermediate_size=8192\ntype=MoE"]
-  n10["shared_expert_gate/up/down_proj\nshared expert MLP\nactivation=silu\nintermediate_size=8192\ntype=shared_dense"]
+  n8["router\nMoE router\nactivated_experts=1\nexperts=128\nrouter_aux_loss_coef=0.001\nshared_experts=1"]
+  n9["expert_gate/up/down_proj\nrouted expert MLP\nactivated_experts=1\nactivation=silu\nexpert_dtype=bfloat16\nexperts=128\nintermediate_size=8192\ntype=MoE"]
+  n10["shared_expert_gate/up/down_proj\nshared expert MLP\nactivation=silu\nexperts=1\nintermediate_size=8192\ntype=shared_dense"]
   n11["combine_experts\nMoE combine"]
   n12["residual_add_1\nresidual"]
   n0 --> n1

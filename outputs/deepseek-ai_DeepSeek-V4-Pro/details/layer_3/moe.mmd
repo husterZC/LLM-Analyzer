@@ -8,7 +8,7 @@ flowchart TD
   dispatch --> experts["routed expert MLPs\nexperts=384\nintermediate=3072\nactivation=silu\ndtype=fp4"]
   experts --> reduce["sum routed expert outputs"]
   flat --> shared["shared expert MLP\nintermediate=3072\nactivation=silu"]
-  reduce --> add["add routed + shared"]
   shared --> add
+  reduce --> add["add routed + shared"]
   add --> output["reshape to [B,T,hidden]"]
   output --> residual["HC-post FFN combine"]

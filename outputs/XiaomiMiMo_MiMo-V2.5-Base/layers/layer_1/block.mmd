@@ -1,0 +1,20 @@
+flowchart TD
+  title["layers.1: MiMoV2DecoderLayer[MoE]"]
+  title -.-> n0
+  n0["input\nactivation"]
+  n1["input_layernorm\nRMSNorm"]
+  n2["mimo_v2_attention\nMiMo V2 fused-QKV hybrid GQA\nattention_bias=False\nattention_chunk_size=128\nattention_dropout=0.0\nattention_heads=64\nattention_sink_bias=True\nattention_value_scale=0.707\nhead_dim=192\nk_size=1536\nkv_groups=8\nkv_heads=8\nlayer_index=1\no_hidden_size=8192\npartial_rotary_factor=0.334\nprojection_layout=fused_qkv\nq_size=12288\nqkv_size=14848\nrope_dim=64\nrope_theta=10000\nsliding_window=128\ntype=sliding_window_attention\nv_head_dim=128\nv_size=1024"]
+  n3["residual_add_0\nresidual"]
+  n4["post_attention_layernorm\nRMSNorm"]
+  n5["router\nMiMo noaux_tc MoE router\nactivated_experts=8\nexperts=256\nn_group=1\nnorm_topk_prob=True\nroute_scale=1.0\nscore_correction_bias=True\nscoring_func=sigmoid\ntopk_group=1\ntopk_method=noaux_tc"]
+  n6["expert_gate/up/down_proj\nrouted expert SwiGLU\nactivated_experts=8\nactivation=silu\nexpert_dtype=fp8-e4m3\nexperts=256\nintermediate_size=2048\nmoe_intermediate_size=2048\nnorm_topk_prob=True\nscoring_func=sigmoid\ntopk_method=noaux_tc\ntype=MoE"]
+  n7["combine_experts\nMoE weighted index_add combine"]
+  n8["residual_add_1\nresidual"]
+  n0 --> n1
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6
+  n6 --> n7
+  n7 --> n8
